@@ -1,9 +1,7 @@
 params.dataset = ''
 
 
-def get_mask_fn(tif_fn) {
-    return getParent(tif_fn) / 'masks' / getBaseName(tif_fn)
-}
+def get_mask_fn = { x -> x.getParent().getParent() / 'masks' / x.getBaseName() }
 
 
 process segment_image {
@@ -19,8 +17,8 @@ process segment_image {
 
 workflow {
     allFiles = channel.fromPath("datasets/${params.dataset}/raw/*.tif")
-    maskFiles = allFiles.map({ x -> x.getParent().getParent() / 'masks' / x.getName() })
-    both = allFiles.merge(maskFiles)
-    both.view()
-    segment_image(both)
+    maskFiles = allFiles.map(get_mask_fn)
+    allFiles
+         .merge(maskFiles)
+         .segment_image(both)
 }
