@@ -21,7 +21,7 @@ process segment_image {
 
 
 workflow {
-    allFiles = channel.fromPath("datasets/${params.dataset}/raw/*.tif")
+    allFiles = channel.fromPath("datasets/${params.dataset}/raw/*.tif*")
     maskFiles = allFiles.map(get_mask_fn)
     both = allFiles.merge(maskFiles)
     segment_image(both)
