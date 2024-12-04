@@ -25,9 +25,9 @@ process segment_image {
 
 process track_images {
     executor 'slurm'
-    cpus 1
-    time '5 min'
-    memory '8 GB'
+    cpus 8
+    time '120 min'
+    memory '32 GB'
 
     input:
     path mask_dir

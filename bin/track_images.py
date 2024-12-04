@@ -16,5 +16,6 @@ track_images(
     roi_folder = args.roi_folder,
     create_roi_zip = False,
     tracker = "SimpleLAP",
-    tracker_settings = None
+    tracker_settings = None,
+    max_heap=32
 )

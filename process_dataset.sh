@@ -3,7 +3,7 @@ ml load Nextflow/23.10.0
 ml load Java/11.0.20
 source ~/venvs/cellphe/bin/activate
 
-nextflow run process_dataset.nf --dataset $1
+nextflow run process_dataset.nf --dataset $1 -resume
 
 deactivate
 
