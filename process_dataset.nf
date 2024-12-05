@@ -1,10 +1,5 @@
 params.dataset = ''
 
-
-def get_mask_dir = { x -> x.getParent().getParent() / 'masks' }
-def get_mask_fn = { x -> get_mask_dir(x) / x.getName() }
-
-
 process segment_image {
     executor 'slurm'
     cpus 1
@@ -12,14 +7,15 @@ process segment_image {
     memory '4 GB'
 
     input:
-    tuple path(input_fn, stageAs: "raw/*"), path(output_fn, stageAs: "masks/*")
+    path input_fn
 
     output:
-    path output_fn
+    path "*.mask.tif"
  
     script:
+    outName = input_fn.baseName 
     """
-    segment_image.py $input_fn $output_fn
+    segment_image.py ${input_fn} ${outName}.mask.tif
     """
 }
 
@@ -28,19 +24,20 @@ process track_images {
     cpus 8
     time '120 min'
     memory '32 GB'
+    publishDir "datasets/${params.dataset}/", mode: 'copy'
 
     input:
-    path mask_dir
-    path roi_dir
-    path csv_fn
-    val dummy
+    path mask_fns
 
     output:
-    path csv_fn
+    path "rois/", emit: rois, type: 'dir'
+    path "trackmate_features.csv", emit: trackmate_features
  
     script:
     """
-    track_images.py $mask_dir $roi_dir $csv_fn 
+    mkdir masks
+    mv *.mask.tif masks
+    track_images.py masks rois trackmate_features.csv
     """
 }
 
@@ -49,19 +46,19 @@ process cellphe_frame_features {
     cpus 1
     time '60 min'
     memory '16 GB'
+    publishDir "datasets/${params.dataset}/", mode: 'copy'
 
     input:
     path trackmate_csv
+    path raw_dir
     path roi_dir
-    path image_dir
-    path frame_features
 
     output:
-    path frame_features
+    path "frame_features.csv"
  
     script:
     """
-    frame_features.py $trackmate_csv $roi_dir $image_dir $frame_features
+    frame_features.py ${trackmate_csv} ${raw_dir} ${roi_dir} frame_features.csv
     """
 }
 
@@ -70,36 +67,26 @@ process cellphe_time_series_features {
     cpus 1
     time '5 min'
     memory '8 GB'
+    publishDir "datasets/${params.dataset}/", mode: 'copy'
 
     input:
     path(frame_features) 
-    path(ts_features)
 
     output:
-    path ts_features
+    path "time_series_features.csv"
  
     script:
     """
-    time_series_features.py $frame_features $ts_features
+    time_series_features.py $frame_features time_series_features.csv
     """
 }
 
 
 workflow {
     // Specify file paths
-    image_dir = channel.fromPath("datasets/${params.dataset}/raw", type: 'dir')
-    mask_dir = channel.fromPath("datasets/${params.dataset}/masks", type: 'dir')
-    roi_dir = channel.fromPath("datasets/${params.dataset}/rois", type: 'dir')
-    rois_fn = channel.fromPath("datasets/${params.dataset}/rois/*.roi", type: 'file')
-    trackmate_csv = channel.fromPath("datasets/${params.dataset}/trackmate_features.csv", type: 'file')
-    frame_features_csv = channel.fromPath("datasets/${params.dataset}/frame_features.csv", type: 'file')
-    time_series_features_csv = channel.fromPath("datasets/${params.dataset}/ts_features.csv", type: 'file')
     allFiles = channel.fromPath("datasets/${params.dataset}/raw/*.tif*")
-
-    maskFiles = allFiles.map(get_mask_fn)
-    both = allFiles.merge(maskFiles)
-    segment_output = segment_image(both).collect().transpose().collect()
-    trackmate_features = track_images(mask_dir, roi_dir, trackmate_csv, segment_output)
-    frame_out = cellphe_frame_features(trackmate_features, image_dir, roi_dir, frame_features_csv)
-    cellphe_time_series_features(frame_out, time_series_features_csv)
+    maskDir = segment_image(allFiles)
+    track_out = track_images(maskDir.collect())
+    frame_out = cellphe_frame_features(track_images.out.trackmate_features, file("datasets/${params.dataset}/raw"), track_images.out.rois)
+    cellphe_time_series_features(frame_out)
 }
