@@ -24,7 +24,7 @@ process track_images {
     cpus 8
     time '120 min'
     memory '32 GB'
-    publishDir "datasets/${params.dataset}/", mode: 'copy'
+    publishDir "../Datasets/${params.dataset}/", mode: 'copy'
 
     input:
     path mask_fns
@@ -84,7 +84,7 @@ process create_frame_summary_features {
     cpus 2
     time '30 min'
     memory '16 GB'
-    publishDir "datasets/${params.dataset}/", mode: 'copy'
+    publishDir "../Datasets/${params.dataset}/", mode: 'copy'
 
     input:
     path(frame_features_static) 
@@ -104,7 +104,7 @@ process cellphe_time_series_features {
     cpus 1
     time '60 min'
     memory '16 GB'
-    publishDir "datasets/${params.dataset}/", mode: 'copy'
+    publishDir "../Datasets/${params.dataset}/", mode: 'copy'
 
     input:
     path(frame_features) 
@@ -121,7 +121,7 @@ process cellphe_time_series_features {
 
 workflow {
     // Specify file paths
-    allFiles = channel.fromPath("datasets/${params.dataset}/raw/*.tif*")
+    allFiles = channel.fromPath("../Datasets/${params.dataset}/raw/*.tif*")
 
     // Segment all images and track
     segment_image(allFiles)
