@@ -30,14 +30,14 @@ process track_images {
     path mask_fns
 
     output:
-    path "rois/", emit: rois, type: 'dir'
+    path "rois.zip", emit: rois
     path "trackmate_features.csv", emit: trackmate_features
  
     script:
     """
     mkdir masks
     mv *.mask.tif masks
-    track_images.py masks rois trackmate_features.csv
+    track_images.py masks rois.zip trackmate_features.csv
     """
 }
 
@@ -50,14 +50,14 @@ process cellphe_frame_features_image {
     input:
     path image_fn
     path trackmate_csv
-    path roi_dir
+    path roi_fn
 
     output:
     path "frame_features_*.csv"
  
     script:
     """
-    frame_features_image.py ${trackmate_csv} ${image_fn} ${roi_dir}
+    frame_features_image.py ${trackmate_csv} ${image_fn} ${roi_fn}
     """
 }
 

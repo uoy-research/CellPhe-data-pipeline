@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from cellphe import import_data
 from cellphe.features.frame import extract_static_features, STATIC_FEATURE_NAMES
-from cellphe.input import read_roi, read_tiff
+from cellphe.input import read_rois, read_tiff
 from cellphe.processing import normalise_image
 import argparse
 import re
@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('trackmate_file', help="Input trackmate CSV file")
 parser.add_argument('image_file', help="Input frame filepath")
-parser.add_argument('roi_folder', help="Input ROIs folder")
+parser.add_argument('roi_file', help="Input ROIs archive")
 parser.add_argument('--min_cell', help="Minimum cell size",
 type=int, default=8)
 args = parser.parse_args()
@@ -38,13 +38,13 @@ frame_id = get_index(args.image_file)
 # Find all cells in this frame
 records = []
 cell_ids = df.loc[df["FrameID"] == frame_id]["CellID"].unique()
+rois = read_rois(args.roi_file)
 for cell_id in cell_ids:
     roi_fn = df.loc[(df["FrameID"] == frame_id) & (df["CellID"] == cell_id)]["ROI_filename"].values[0]
-    roi_path = os.path.join(args.roi_folder, f"{roi_fn}.roi")
     try:
-        roi = read_roi(roi_path)
+        roi = rois[f"{roi_fn}.roi"]
     except FileNotFoundError:
-        print(f"Unable to read file {roi_path} - skipping to next ROI")
+        print(f"Unable to read file {roi_fn} - skipping to next ROI")
         continue
     # No negative coordinates
     roi = np.maximum(roi, 0)
