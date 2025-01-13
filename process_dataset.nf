@@ -118,10 +118,84 @@ process cellphe_time_series_features {
     """
 }
 
+process ome_get_global_t {
+    input:
+    path(xml_file)
+
+    output:
+    stdout
+
+    script:
+    """
+    xpath -q -e '//OME/Image/Pixels/TiffData/@FirstT' $xml_file | sed 's/FirstT=//g' | sed 's/\"//g'
+    """
+}
+
+process ome_get_frame_t {
+    input:
+    path(xml_file)
+
+    output:
+    stdout
+
+    script:
+    """
+    xpath -q -e '//OME/Image/Pixels/TiffData/@IFD' $xml_file | sed 's/IFD=//g' | sed 's/\"//g'
+    """
+}
+
+process ome_get_filename {
+    input:
+    path(xml_file)
+
+    output:
+    stdout
+
+    script:
+    """
+    xpath -q -e '//OME/Image/Pixels/TiffData/UUID/@FileName' $xml_file | sed 's/FileName=//g' | sed 's/\"//g'
+    """
+}
+
+process split_ome_frames {
+    publishDir "../Datasets/${params.dataset}/frames", mode: 'copy'
+
+    input:
+    tuple path(ome_fn), val(frame_index), val(global_frame_index)
+    
+    output:
+    file('frame_*.tiff')
+
+    script:
+    """
+    tiffcp ${ome_fn},${frame_index} frame_${global_frame_index}.tiff
+    """
+}
 
 workflow {
-    // Specify file paths
-    allFiles = channel.fromPath("../Datasets/${params.dataset}/raw/*.tif*")
+    // Split .ome files up into 1 tiff per frame if XML is present
+    xml_chan = file("../Datasets/${params.dataset}/raw/*companion.ome*")
+    if (xml_chan.isEmpty()) {
+        allFiles = channel.fromPath("../Datasets/${params.dataset}/raw/*.tif*")
+    } else {
+	    // Obtain a list of all the frames in the dataset in the format:
+	    // (ome filename, ome frame index, overall frame index)
+        xml1 = ome_get_filename(xml_chan)
+            | splitText()
+            | map( it -> it.trim())
+            | map( it -> file("../Datasets/${params.dataset}/raw/" + it) )
+        xml2 = ome_get_frame_t(xml_chan)
+                | splitText()
+                | map( it -> it.trim())
+        xml3 = ome_get_global_t(xml_chan)
+                | splitText()
+                | map( it -> it.trim())
+                | map( it -> (it.toInteger() + 1).toString().padLeft(5, "0"))  // TODO possible to get the maximum number of frames dynamically?
+        allFiles = xml1
+            | merge(xml2)
+            | merge(xml3)
+            | split_ome_frames
+    }
 
     // Segment all images and track
     segment_image(allFiles)
@@ -131,9 +205,9 @@ workflow {
     // Generate CellPhe features on each frame separately
     // Then combine and add the summary features (density, velocity etc..., then time-series features)
     static_feats = cellphe_frame_features_image(
-	allFiles,
-	track_images.out.trackmate_features,
- 	track_images.out.rois
+        allFiles,
+        track_images.out.trackmate_features,
+        track_images.out.rois
     )
       | collect
       | combine_frame_features
