@@ -11,7 +11,7 @@
 ml load tools/rclone
 
 # Step 1: Transfer data to Viking
-rclone copy -v --include "$3" --drive-root-folder-id $1 CellPheGDrive: CellPheViking:/mnt/scratch/projects/biol-imaging-2024/Datasets/$2/raw
+rclone copy -v --include "*$3*.tif*" --include "*$3*.companion.ome*" --drive-root-folder-id $1 CellPheGDrive: CellPheViking:/mnt/scratch/projects/biol-imaging-2024/Datasets/$2/raw
 
 # Step 2: Submit the job to process the data (waits until complete)
 ssh viking "cd /mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline && ./process_dataset.sh $2"
