@@ -173,46 +173,45 @@ process split_ome_frames {
 }
 
 workflow {
-    // TODO Split .ome files up if XML is present
-
-    // Obtain a list of all the frames in the dataset with in the format:
-    // (ome filename, ome frame index, overall frame index)
-    xml_chan = channel.fromPath("../Datasets/${params.dataset}/raw/*companion.ome*")
-    xml1 = ome_get_filename(xml_chan) 
-        | splitText()
-        | map( it -> it.trim())
-        | map( it -> file("../Datasets/${params.dataset}/raw/" + it) )
-    xml2 = ome_get_frame_t(xml_chan)
+    // Split .ome files up into 1 tiff per frame if XML is present
+    xml_chan = file("../Datasets/${params.dataset}/raw/*companion.ome*")
+    if (xml_chan.isEmpty()) {
+        allFiles = channel.fromPath("../Datasets/${params.dataset}/raw/*.tif*")
+    } else {
+	    // Obtain a list of all the frames in the dataset in the format:
+	    // (ome filename, ome frame index, overall frame index)
+        xml1 = ome_get_filename(xml_chan)
             | splitText()
             | map( it -> it.trim())
-    xml3 = ome_get_global_t(xml_chan) 
-            | splitText()
-            | map( it -> it.trim())
-            | map( it -> (it.toInteger() + 1).toString().padLeft(5, "0"))  // TODO possible to get the maximum number of frames?
-                                                                           // Can't see a way of getting channel count as a groovy variable
-    xml1
-        | merge(xml2)
-        | merge(xml3)
-        | split_ome_frames
+            | map( it -> file("../Datasets/${params.dataset}/raw/" + it) )
+        xml2 = ome_get_frame_t(xml_chan)
+                | splitText()
+                | map( it -> it.trim())
+        xml3 = ome_get_global_t(xml_chan)
+                | splitText()
+                | map( it -> it.trim())
+                | map( it -> (it.toInteger() + 1).toString().padLeft(5, "0"))  // TODO possible to get the maximum number of frames dynamically?
+        allFiles = xml1
+            | merge(xml2)
+            | merge(xml3)
+            | split_ome_frames
+    }
 
-    // Specify file paths
-    //allFiles = channel.fromPath("../Datasets/${params.dataset}/raw/*.tif*")
+    // Segment all images and track
+    segment_image(allFiles)
+      | collect
+      | track_images
 
-    //// Segment all images and track
-    //segment_image(allFiles)
-    //  | collect
-    //  | track_images
+    // Generate CellPhe features on each frame separately
+    // Then combine and add the summary features (density, velocity etc..., then time-series features)
+    static_feats = cellphe_frame_features_image(
+        allFiles,
+        track_images.out.trackmate_features,
+        track_images.out.rois
+    )
+      | collect
+      | combine_frame_features
 
-    //// Generate CellPhe features on each frame separately
-    //// Then combine and add the summary features (density, velocity etc..., then time-series features)
-    //static_feats = cellphe_frame_features_image(
-    //    allFiles,
-    //    track_images.out.trackmate_features,
-    //    track_images.out.rois
-    //)
-    //  | collect
-    //  | combine_frame_features
-
-    //create_frame_summary_features(static_feats, track_images.out.trackmate_features)
-    //  | cellphe_time_series_features
+    create_frame_summary_features(static_feats, track_images.out.trackmate_features)
+      | cellphe_time_series_features
 }
