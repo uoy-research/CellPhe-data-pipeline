@@ -36,7 +36,7 @@ process track_images {
     """
     mkdir masks
     mv *.mask.tif masks
-    track_images.py masks rois.zip trackmate_features.csv
+    track_images.py masks rois.zip trackmate_features.csv "$task.memory"
     """
 }
 
