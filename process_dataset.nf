@@ -1,10 +1,9 @@
 params.dataset = ''
 
 process segment_image {
-    executor 'slurm'
-    cpus 1
-    time '30 min'
-    memory '8 GB'
+    label 'slurm'
+    time { 10.minute * task.attempt }
+    memory { 2.GB * task.attempt }
 
     input:
     path input_fn
@@ -20,10 +19,10 @@ process segment_image {
 }
 
 process track_images {
-    executor 'slurm'
-    cpus 8
-    time '120 min'
-    memory '32 GB'
+    label 'slurm'
+    cpus 4
+    time { 30.minute * task.attempt }
+    memory { 32.GB * task.attempt }
     publishDir "../Datasets/${params.dataset}/", mode: 'copy'
 
     input:
@@ -37,15 +36,14 @@ process track_images {
     """
     mkdir masks
     mv *.mask.tif masks
-    track_images.py masks rois.zip trackmate_features.csv
+    track_images.py masks rois.zip trackmate_features.csv "$task.memory"
     """
 }
 
 process cellphe_frame_features_image {
-    executor 'slurm'
-    cpus 1
-    time '60 min'
-    memory '16 GB'
+    label 'slurm'
+    time { 15.minute * task.attempt }
+    memory { 2.GB * task.attempt }
 
     input:
     path image_fn
@@ -62,10 +60,9 @@ process cellphe_frame_features_image {
 }
 
 process combine_frame_features {
-    executor 'slurm'
-    cpus 1
-    time '15 min'
-    memory '4 GB'
+    label 'slurm'
+    time { 5.minute * task.attempt }
+    memory { 4.GB * task.attempt }
 
     input:
     path input_fns
@@ -80,10 +77,9 @@ process combine_frame_features {
 }
 
 process create_frame_summary_features {
-    executor 'slurm'
-    cpus 2
-    time '30 min'
-    memory '16 GB'
+    label 'slurm'
+    time { 15.minute * task.attempt }
+    memory { 4.GB * task.attempt }
     publishDir "../Datasets/${params.dataset}/", mode: 'copy'
 
     input:
@@ -100,10 +96,9 @@ process create_frame_summary_features {
 }
 
 process cellphe_time_series_features {
-    executor 'slurm'
-    cpus 1
-    time '60 min'
-    memory '16 GB'
+    label 'slurm'
+    time { 30.minute * task.attempt }
+    memory { 4.GB * task.attempt }
     publishDir "../Datasets/${params.dataset}/", mode: 'copy'
 
     input:
@@ -119,6 +114,8 @@ process cellphe_time_series_features {
 }
 
 process ome_get_global_t {
+    label 'local'
+
     input:
     path(xml_file)
 
@@ -132,6 +129,8 @@ process ome_get_global_t {
 }
 
 process ome_get_frame_t {
+    label 'local'
+
     input:
     path(xml_file)
 
@@ -145,6 +144,8 @@ process ome_get_frame_t {
 }
 
 process ome_get_filename {
+    label 'local'
+
     input:
     path(xml_file)
 
@@ -158,6 +159,7 @@ process ome_get_filename {
 }
 
 process split_ome_frames {
+    label 'local'
     publishDir "../Datasets/${params.dataset}/frames", mode: 'copy'
 
     input:
