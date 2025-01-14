@@ -16,5 +16,7 @@ rclone copy -v --include "*$3*.tif*" --include "*$3*.companion.ome*" --drive-roo
 # Step 2: Submit the job to process the data (waits until complete)
 ssh viking "cd /mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline && ./process_dataset.sh $2"
 
-# Step 3: Transfers the outputs to the network share (mounted locally on research0)
-rclone copy -v CellPheViking:/mnt/scratch/projects/biol-imaging-2024/Datasets/$2 /shared/storage/bioldata/bl-cellphe/Datasets/$2
+# Step 3: Only transfer outputs to network share on job success
+if [ $? -eq 0 ]; then
+    rclone copy -v CellPheViking:/mnt/scratch/projects/biol-imaging-2024/Datasets/$2 /shared/storage/bioldata/bl-cellphe/Datasets/$2
+fi
