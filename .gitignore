@@ -2,3 +2,4 @@ work/
 datasets/
 .nextflow*
 *.swp
+.rclone.config
