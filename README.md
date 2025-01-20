@@ -17,7 +17,24 @@ Full instructions will be made available soon.
 
 # Data transfer diagram
 
-TODO
+```mermaid
+architecture-beta
+    group campus(cloud)[Campus firewall]
+    group gcloud(cloud)[Google Cloud]
+
+    service gdrive(disk)[Google Drive] in gcloud
+
+    service bioldata(disk)[bioldata] in campus
+    service research0(server)[Research0] in campus
+    service viking(server)[Viking] in campus
+    service laptop(server)[Personal PC]
+
+    gdrive:R --> L:viking
+    viking:R --> L:bioldata
+    bioldata:T -- B:research0
+    laptop:L -- R:bioldata
+    laptop:T -- R:research0
+```
 
 # Running the Pipeline
 
@@ -76,4 +93,54 @@ If this doesn't work, try again or ask for help in Slack.
 
 ## Running
 
-TODO instructions on getting Google Drive ID, pattern, and desired output name
+The `research0` machine has the `bioldata` storage already mounted, which is where the pipeline code is run from.
+After SSHing into `research0`, change into the CellPhe share on `bioldata` with `cd /shared/storage/bioldata/bl-cellphe` (`cd` stands for Change Directory).
+**NB: tab-completion saves a lot of time typing, i.e. after typing `cd /sh` if you press Tab it will autocomplete the rest of the word `shared`**
+
+You can see all the files and folders with `ls` (List Directory) which should show you the same as below:
+
+![Bioldata contents](docs/bioldata_contents.png)
+
+Change into the `CellPhe-data-pipeline` directory with `cd CellPhe-data-pipeline` (again tab-complete helps), where `ls` will show that a number of files exist.
+`run.sh` is the one that runs the pipeline and it takes 3 arguments:
+
+  - 1. ID of the folder on GoogleDrive containing the images
+  - 2. Desired output folder name
+  - 3. A pattern matching the images
+
+For example, the screenshot below shows how to obtain the ID of the Google Drive folder `CellPhe2 Project/LiveCyte Data/June12 - Outputs/July12 starvation - Outputs/Raw Data/2024-07-12_09-19-09/Images` by navigating to the folder in a web-browser and copying the last string of letters and numbers (highlighted).
+
+![How to get the image folder ID](docs/getting_directory_id.png)
+
+This folder contains multiple timelapses from different wells and modalities, such as `B3_3_Phase`, `B3_3_Brightfield`, `B2_4_Phase`, `B2_4_Brightfield`.
+Only one of these can be run through the pipeline at once, so let's take the `B2_4_Phase` as an example.
+A sensible name for the output folder might be `2024-07-12-Starvation-B2_4_Phase`, which would make the pipeline command:
+
+This means run the pipeline using images from the Google Drive folder with that ID, but only take images that match the pattern `B2_4_Phase`, and save these in the bioldata folder `Datasets/2024-07-12-Starvation-B2_4_Phase`.
+
+`./run.sh 1ZocVZfYjb3l9hhqTM2gLpSM55KSgQ_Uv 2024-07-12-Starvation-B2_4_Phase B2_4_Phase`
+
+The first step in the pipeline is to copy the files over to Viking from Google Drive, this can take around 5 minutes.
+
+![How to get the image folder ID](docs/pipeline_copy_files.png)
+
+After this, the pipeline begins in earnest, starting with splitting the .ome.tiff files into their constituent frames (in this example the 172 .ome.tiff files correspond to 961 frames), before the segmentation, tracking, and CellPhe feature extraction are run.
+The segmentation (`segment_image`) and CellPhe feature extraction (`cellphe_frame_features_image`) steps are run on each frame in parallel so should be fast.
+The tracking (`track_images`) step is run in one go and can take around 15 minutes depending on the dataset.
+Of the remaining 3 CellPhe steps (`combine_frame_features`, `create_frame_summary_features`, `cellphe_time_series_features`), only the time-series features actually does any serious computation and even then only takes a few minutes.
+
+![How to get the image folder ID](docs/pipeline_run_nextflow.png)
+
+Occasionally you might encounter an error such as below.
+Not to worry, these jobs will be resubmitted to Viking but with additional resources (i.e. time and memory) so that they should successfully complete.
+
+![How to get the image folder ID](docs/pipeline_error.png)
+
+TODO screenshot of data transfer back up and how to find files
+
+## Tips
+
+If you are on an unstable connection, or just want the added security, you can run the pipeline from within a `tmux` session which means that if your connection to `research0` is lost then the pipeline won't terminate.
+To do so, simply run `tmux` after connecting to `research0`. 
+Now, if your SSH connection is lost, you can reconnect to `research0` and run `tmux attach` and it will resume your last session with the pipeline still running.
+To exit a `tmux` session press Ctrl-D, and a second Ctrl-D to disconnect from `research0` itself.
