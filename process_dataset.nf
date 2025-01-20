@@ -4,6 +4,7 @@ process segment_image {
     label 'slurm'
     time { 10.minute * task.attempt }
     memory { 2.GB * task.attempt }
+    publishDir "../Datasets/${params.dataset}/masks", mode: 'copy'
 
     input:
     path input_fn
