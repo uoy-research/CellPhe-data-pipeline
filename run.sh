@@ -11,10 +11,10 @@
 ml load tools/rclone
 
 # Step 1: Transfer data to Viking
-#rclone --config .rclone.config copy -v --include "*$3*.tif*" --include "*$3*.companion.ome*" --drive-root-folder-id $1 CellPheGDrive: CellPheViking:/mnt/scratch/projects/biol-imaging-2024/Datasets/$2/raw
+rclone --config .rclone.config copy -v --include "*$3*.tif*" --include "*$3*.companion.ome*" --drive-root-folder-id $1 GDrive: Viking:/mnt/scratch/projects/biol-imaging-2024/Datasets/$2/raw
 #
-## Step 2: Submit the job to process the data (waits until complete)
-#ssh viking "cd /mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline && ./process_dataset.sh $2"
+# Step 2: Submit the job to process the data (waits until complete)
+ssh viking "cd /mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline && ./process_dataset.sh $2"
 
 # Step 3: Only transfer outputs to network share on job success
 if [ $? -eq 0 ]; then
