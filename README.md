@@ -73,21 +73,20 @@ The final step of preparation is to facilitate password-less SSH connection from
 This is an alternative form of authentication to username & password which creates a pair of two 'keys', a public and a private.
 The private one is associated with a specific machine (in this instance `research0`) and the public one is distributed to anywhere you wish to connect to (in this instance Viking, but it can also be used to authenticate to GitHub for example).
 
-Run the following instruction to create the pair, accepting the defaults for the 3 options (location, passphrase, passphrase confirmation).
-
+Run the following instruction on `research0` to create the pair, accepting the defaults for the 3 options (location, passphrase, passphrase confirmation). 
 `ssh-keygen -t ed25519 -C "research0"`
 
-The final step is to place the public key onto Viking so it can authenticate you.
+Now, the public key needs to be placed onto Viking so your user can be authenticated from `research0`.
 
-Run `nano ~/.ssh/id_ed25519.pub` to open the key in the Nano text editor. 
+Run `nano ~/.ssh/id_ed25519.pub` to open the key in the Nano text editor (still on `research0`). 
 Highlight the text with the cursor and right click to copy it, then exit Nano with Ctrl-X
 
 Now SSH into Viking and open run the following command to open the Authorized Keys file, which is where the SSH command looks at an attempted login to see if the connecting machine has an SSH key registered.
-
 `nano ~/.ssh/authorized_keys`
 
 By default there is one already there, the "Flight HPC Cluster Key", so press the down arrow key to move to a new line and then right click to paste your `research0` key.
 Save this with Ctrl-O then Enter, then exit Nano with Ctrl-X.
+
 If you now disconnect from Viking (Ctrl-D) and try to reconnect, it should login you in using your SSH keys and not ask for your password.
 If this doesn't work, try again or ask for help in Slack.
 
@@ -104,9 +103,9 @@ You can see all the files and folders with `ls` (List Directory) which should sh
 Change into the `CellPhe-data-pipeline` directory with `cd CellPhe-data-pipeline` (again tab-complete helps), where `ls` will show that a number of files exist.
 `run.sh` is the one that runs the pipeline and it takes 3 arguments:
 
-  - 1. ID of the folder on GoogleDrive containing the images
-  - 2. Desired output folder name
-  - 3. A pattern matching the images
+- 1. ID of the folder on GoogleDrive containing the images
+- 2. Desired output folder name
+- 3. A pattern matching the images
 
 For example, the screenshot below shows how to obtain the ID of the Google Drive folder `CellPhe2 Project/LiveCyte Data/June12 - Outputs/July12 starvation - Outputs/Raw Data/2024-07-12_09-19-09/Images` by navigating to the folder in a web-browser and copying the last string of letters and numbers (highlighted).
 
