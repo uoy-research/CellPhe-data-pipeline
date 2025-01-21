@@ -52,7 +52,7 @@ process filter_minimum_observations {
     path features_original
 
     output:
-    path "trackmate_features_filtered.csv"
+    path("trackmate_features_filtered.csv", arity: '1')
 
     """
     #!/usr/bin/env python
@@ -60,7 +60,8 @@ process filter_minimum_observations {
 
     raw_feats = pd.read_csv("${features_original}")
     filtered = raw_feats.groupby("TRACK_ID").filter(lambda x: x["FRAME"].count() >= 50)
-    filtered.to_csv("trackmate_features_filtered.csv", index=False)
+    if filtered.shape[0] > 0:
+        filtered.to_csv("trackmate_features_filtered.csv", index=False)
     """
 }
 
@@ -253,10 +254,8 @@ workflow {
       | collect
       | track_images
 
-    // Filter to having a minimum number of observations per cell
+    // Filter to having a minimum number of observations per cell, will error if 0 cells
     trackmate_feats = filter_minimum_observations(track_images.out.features)
-
-    // TODO only want to continue if this file has > 1 row
 
     // Generate CellPhe features on each frame separately
     // Then combine and add the summary features (density, velocity etc..., then time-series features)
