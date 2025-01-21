@@ -117,11 +117,12 @@ sl561@research0:/shared/storage/bioldata/bl-cellphe/CellPhe-data-pipeline$ ls
 bin  nextflow.config  process_dataset.nf  process_dataset.sh  README.md  run.sh
 ```
 
-`run.sh` is the pipeline launcher and it takes 3 arguments:
+`run.sh` is the pipeline launcher and it takes 4 arguments:
 
   1. ID of the folder on GoogleDrive containing the images
   2. Desired output folder name
   3. A pattern matching the images
+  4. **Optional**: The name of the CellPose model to use, defaulting to `cyto3`. If set to `iolight` then it uses the custom model that Le trained
 
 The screenshot below shows how to obtain the ID of the Google Drive folder `CellPhe2 Project/LiveCyte Data/June 14 drug - Outputs/Raw Data/2024-06-14_15-18-15/Images` by navigating to the folder in a web-browser and copying the last string of letters and numbers (highlighted).
 
