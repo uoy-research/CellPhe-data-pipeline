@@ -26,7 +26,7 @@ image = read_tiff(args.image_file)
 image = normalise_image(image, 0, 255)
 
 def get_index(fn):
-    res = re.search(r"([0-9]+)(?:.ome)?\.tiff?$", fn)
+    res = re.search(r"frame_([0-9]+)\.[jpg|jpeg|tif|tiff|JPG|JPEG|TIF|TIFF]", fn)
     if res is None:
         return None
     else:

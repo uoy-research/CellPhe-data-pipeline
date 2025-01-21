@@ -175,11 +175,37 @@ process split_ome_frames {
     """
 }
 
+process rename_frames {
+    label 'local'
+    publishDir "../Datasets/${params.dataset}/frames", mode: 'copy'
+
+    input:
+    path(in_dir)
+
+
+    output:
+    file('frame_*.*')
+
+    """
+    #!/usr/bin/env python
+
+    import os
+    import shutil
+    import pathlib
+
+    for i, raw_fn in enumerate(sorted(os.listdir("${in_dir}"))):
+        new_fn = f"frame_{i:05}{pathlib.Path(raw_fn).suffix}"
+        shutil.copy2(os.path.join("${in_dir}", raw_fn), new_fn)
+    """
+}
+
 workflow {
     // Split .ome files up into 1 image per frame if XML is present
+    // Otherwise rename images into the same frame_<frameid> convention
     xml_chan = file("../Datasets/${params.dataset}/raw/*companion.ome*")
     if (xml_chan.isEmpty()) {
-        allFiles = channel.fromPath("../Datasets/${params.dataset}/raw/*.{tif,tiff,jpg,jpeg,TIF,TIFF,JPG,JPEG}")
+        // Rename files to frame_<frameid>.<ext>
+        allFiles = rename_frames(file("../Datasets/${params.dataset}/raw")).flatten()
     } else {
 	    // Obtain a list of all the frames in the dataset in the format:
 	    // (ome filename, ome frame index, overall frame index)
