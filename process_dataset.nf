@@ -194,7 +194,7 @@ process rename_frames {
     import pathlib
 
     for i, raw_fn in enumerate(sorted(os.listdir("${in_dir}"))):
-        new_fn = f"frame_{i:05}{pathlib.Path(raw_fn).suffix}"
+        new_fn = f"frame_{i+1:05}{pathlib.Path(raw_fn).suffix}"
         shutil.copy2(os.path.join("${in_dir}", raw_fn), new_fn)
     """
 }
