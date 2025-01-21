@@ -31,7 +31,7 @@ process track_images {
 
     output:
     path "rois.zip", emit: rois
-    path "trackmate_features.csv", emit: trackmate_features
+    path "trackmate_features.csv", emit: features
  
     script:
     """
@@ -41,9 +41,31 @@ process track_images {
     """
 }
 
+process filter_minimum_observations {
+    label 'slurm'
+    time { 5.minute * task.attempt }
+    memory { 8.GB * task.attempt }
+    publishDir "../Datasets/${params.dataset}/", mode: 'copy'
+
+    input:
+    path features_original
+
+    output:
+    path "trackmate_features_filtered.csv"
+
+    """
+    #!/usr/bin/env python
+    import pandas as pd
+
+    raw_feats = pd.read_csv("${features_original}")
+    filtered = raw_feats.groupby("TRACK_ID").filter(lambda x: x["FRAME"].count() >= 50)
+    filtered.to_csv("trackmate_features_filtered.csv", index=False)
+    """
+}
+
 process cellphe_frame_features_image {
     label 'slurm'
-    time { 15.minute * task.attempt }
+    time { 5.minute * task.attempt }
     memory { 2.GB * task.attempt }
 
     input:
@@ -182,7 +204,6 @@ process rename_frames {
     input:
     path(in_dir)
 
-
     output:
     file('frame_*.*')
 
@@ -231,16 +252,19 @@ workflow {
       | collect
       | track_images
 
+    // Filter to having a minimum number of observations per cell
+    trackmate_feats = filter_minimum_observations(track_images.out.features)
+
     // Generate CellPhe features on each frame separately
     // Then combine and add the summary features (density, velocity etc..., then time-series features)
     static_feats = cellphe_frame_features_image(
         allFiles,
-        track_images.out.trackmate_features,
+        trackmate_feats,
         track_images.out.rois
     )
       | collect
       | combine_frame_features
 
-    create_frame_summary_features(static_feats, track_images.out.trackmate_features)
+    create_frame_summary_features(static_feats, trackmate_feats)
       | cellphe_time_series_features
 }
