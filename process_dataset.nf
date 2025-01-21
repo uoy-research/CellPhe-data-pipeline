@@ -176,10 +176,10 @@ process split_ome_frames {
 }
 
 workflow {
-    // Split .ome files up into 1 tiff per frame if XML is present
+    // Split .ome files up into 1 image per frame if XML is present
     xml_chan = file("../Datasets/${params.dataset}/raw/*companion.ome*")
     if (xml_chan.isEmpty()) {
-        allFiles = channel.fromPath("../Datasets/${params.dataset}/raw/*.tif*")
+        allFiles = channel.fromPath("../Datasets/${params.dataset}/raw/*.{tif,tiff,jpg,jpeg,TIF,TIFF,JPG,JPEG}")
     } else {
 	    // Obtain a list of all the frames in the dataset in the format:
 	    // (ome filename, ome frame index, overall frame index)
