@@ -119,9 +119,9 @@ bin  nextflow.config  process_dataset.nf  process_dataset.sh  README.md  run.sh
 
 `run.sh` is the pipeline launcher and it takes 3 arguments:
 
-- 1. ID of the folder on GoogleDrive containing the images
-- 2. Desired output folder name
-- 3. A pattern matching the images
+  1. ID of the folder on GoogleDrive containing the images
+  2. Desired output folder name
+  3. A pattern matching the images
 
 The screenshot below shows how to obtain the ID of the Google Drive folder `CellPhe2 Project/LiveCyte Data/June 14 drug - Outputs/Raw Data/2024-06-14_15-18-15/Images` by navigating to the folder in a web-browser and copying the last string of letters and numbers (highlighted).
 
