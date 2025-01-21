@@ -1,4 +1,5 @@
 params.dataset = ''
+params.cellpose_model = 'cyto3'
 
 process segment_image {
     label 'slurm'
@@ -15,7 +16,7 @@ process segment_image {
     script:
     outName = input_fn.baseName 
     """
-    segment_image.py ${input_fn} ${outName}.mask.tif
+    segment_image.py ${input_fn} ${params.cellpose_model} ${outName}.mask.tif
     """
 }
 
@@ -254,6 +255,8 @@ workflow {
 
     // Filter to having a minimum number of observations per cell
     trackmate_feats = filter_minimum_observations(track_images.out.features)
+
+    // TODO only want to continue if this file has > 1 row
 
     // Generate CellPhe features on each frame separately
     // Then combine and add the summary features (density, velocity etc..., then time-series features)
