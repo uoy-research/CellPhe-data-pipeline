@@ -238,7 +238,7 @@ frame_features.csv  frames  masks  raw  rois.zip  time_series_features.csv  trac
 ### Retrying execution
 
 Occasionally you might encounter an error such as below.
-Not to worry, these jobs will be resubmitted to Viking but with additional resources (i.e. time and memory) so that they should successfully complete.
+Not to worry, these jobs will be resubmitted to Viking but with additional resources (i.e. time and memory) so that they should successfully complete and it won't affect the overall pipeline.
 
 ```Shell
 [40/e027a1] NOTE: Process `segment_image(20)` terminated with an error exit status (140) -- Execution is retried (1)
@@ -249,6 +249,7 @@ Not to worry, these jobs will be resubmitted to Viking but with additional resou
 
 Another error you might encounter is an error in `executing process > 'filter_minimum_observations'` due to a missing file `trackmate_features_filtered.csv`.
 This means that there weren't any cells that are tracked for the minimum number of observations (50 by default).
+This error will terminate the entire pipeline as features can't be extracted for 0 cells!
 If you encounter this, try again with different segmentation and/or tracking parameters.
 
 ```Shell
