@@ -273,9 +273,14 @@ Caused by:
 ## Tmux
 
 If you are on an unstable connection, or just want the added security, you can run the pipeline from within a `tmux` session which means that if your connection to `research0` is lost then the pipeline won't terminate.
-To do so, simply run `tmux` after connecting to `research0` then run the pipeline as usual.
-If your SSH connection is later lost, you can reconnect to `research0` and run `tmux attach` and it will resume your last session with the pipeline still running.
-To exit a `tmux` session press Ctrl-D, and a second Ctrl-D to disconnect from `research0` itself.
+Simply run `tmux` after connecting to `research0` - you can tell if this has worked because you will now have a green bar at the bottom of the terminal.
+You can now launch the pipeline in the same way as before by running the `./run.sh ...` command.
+
+If your SSH connection is lost while the pipeline is running, you can reconnect to `research0` and run `tmux attach` and it will resume your last session with the pipeline still running.
+Or, if you simply want to close the connection (for example if you want to shutdown your laptop or disconnect it from the internet), you can exit the `tmux` session with Ctrl-B + D.
+This will take you back into your shell session on `research0`, so you can now disconnect entirely with `Ctrl-D`.
+As before, when you reconnect to `research0` you can run `tmux attach` to resume your session.
+To exit a `tmux` session (rather than just leaving it running in the background) press Ctrl-D.
 
 ## Mapping bioldata on personal machine
 
