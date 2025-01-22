@@ -170,13 +170,6 @@ executor >  local (724), slurm (721)
 [-        ] process > cellphe_time_series_features  -
 ```
 
-Occasionally you might encounter an error such as below.
-Not to worry, these jobs will be resubmitted to Viking but with additional resources (i.e. time and memory) so that they should successfully complete.
-
-```Shell
-[40/e027a1] NOTE: Process `segment_image(20)` terminated with an error exit status (140) -- Execution is retried (1)
-```
-
 Once the job has completed there will be a summary detailing how long the job took (note that this particular example took 13 minutes in real-time, but used 6 computer hours, how long it would have taken without parallelisation).
 The pipeline outputs are then transferred to `bioldata` where they can be seen in the `Datasets` folder.
 
@@ -238,6 +231,41 @@ Elapsed time:      4m27.2s
 sl561@research0:/shared/storage/bioldata/bl-cellphe/CellPhe-data-pipeline$ cd ../Datasets/2024-06-14-Drug-C4_5_Phase/
 sl561@research0:/shared/storage/bioldata/bl-cellphe/Datasets/2024-06-14-Drug-C4_5_Phase$ ls
 frame_features.csv  frames  masks  raw  rois.zip  time_series_features.csv  trackmate_features.csv
+```
+
+## Error messages
+
+### Retrying execution
+
+Occasionally you might encounter an error such as below.
+Not to worry, these jobs will be resubmitted to Viking but with additional resources (i.e. time and memory) so that they should successfully complete.
+
+```Shell
+[40/e027a1] NOTE: Process `segment_image(20)` terminated with an error exit status (140) -- Execution is retried (1)
+```
+
+
+### Missing trackmate features
+
+Another error you might encounter is an error in `executing process > 'filter_minimum_observations'` due to a missing file `trackmate_features_filtered.csv`.
+This means that there weren't any cells that are tracked for the minimum number of observations (50 by default).
+If you encounter this, try again with different segmentation and/or tracking parameters.
+
+```Shell
+executor >  local (1), slurm (475)
+[16/62c797] process > rename_frames                 [100%] 1 of 1 ✔
+[d7/d4b5d4] process > segment_image (105)           [100%] 473 of 473, failed...
+[57/a70edd] process > track_images                  [100%] 1 of 1 ✔
+[03/75566b] process > filter_minimum_observations   [100%] 1 of 1, failed: 1 ✘
+[-        ] process > cellphe_frame_features_image  -
+[-        ] process > combine_frame_features        -
+[-        ] process > create_frame_summary_features -
+[-        ] process > cellphe_time_series_features  -
+Execution cancelled -- Finishing pending tasks before exit
+ERROR ~ Error executing process > 'filter_minimum_observations'
+
+Caused by:
+  Missing output file(s) `trackmate_features_filtered.csv` expected by process `filter_minimum_observations`
 ```
 
 # Tips
