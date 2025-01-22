@@ -26,7 +26,7 @@ image = read_tiff(args.image_file)
 image = normalise_image(image, 0, 255)
 
 def get_index(fn):
-    res = re.search(r"([0-9]+)(?:.ome)?\.tiff?$", fn)
+    res = re.search(r"frame_([0-9]+)\.[jpg|jpeg|tif|tiff|JPG|JPEG|TIF|TIFF]", fn)
     if res is None:
         return None
     else:
@@ -65,4 +65,11 @@ for cell_id in cell_ids:
     record["ROI_filename"] = roi_fn
     records.append(record)
 feats = pd.DataFrame.from_records(records)
-feats.to_csv(f"frame_features_{frame_id}.csv", index=False)
+# Create an empty header row if don't have any data, as otherwise nextflow complains
+output_fn = f"frame_features_{frame_id}.csv"
+if feats.shape[0] == 0:
+    cols = STATIC_FEATURE_NAMES + ['FrameID', 'CellID', 'ROI_filename']
+    with open(output_fn, "w") as outfile:
+        outfile.write(",".join(cols))
+else:
+    feats.to_csv(output_fn, index=False)

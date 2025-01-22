@@ -1,4 +1,5 @@
 params.dataset = ''
+params.cellpose_model = 'cyto3'
 
 process segment_image {
     label 'slurm'
@@ -15,7 +16,7 @@ process segment_image {
     script:
     outName = input_fn.baseName 
     """
-    segment_image.py ${input_fn} ${outName}.mask.tif
+    segment_image.py ${input_fn} ${params.cellpose_model} ${outName}.mask.tif
     """
 }
 
@@ -31,7 +32,7 @@ process track_images {
 
     output:
     path "rois.zip", emit: rois
-    path "trackmate_features.csv", emit: trackmate_features
+    path "trackmate_features.csv", emit: features
  
     script:
     """
@@ -41,9 +42,32 @@ process track_images {
     """
 }
 
+process filter_minimum_observations {
+    label 'slurm'
+    time { 5.minute * task.attempt }
+    memory { 8.GB * task.attempt }
+    publishDir "../Datasets/${params.dataset}/", mode: 'copy'
+
+    input:
+    path features_original
+
+    output:
+    path("trackmate_features_filtered.csv", arity: '1')
+
+    """
+    #!/usr/bin/env python
+    import pandas as pd
+
+    raw_feats = pd.read_csv("${features_original}")
+    filtered = raw_feats.groupby("TRACK_ID").filter(lambda x: x["FRAME"].count() >= 50)
+    if filtered.shape[0] > 0:
+        filtered.to_csv("trackmate_features_filtered.csv", index=False)
+    """
+}
+
 process cellphe_frame_features_image {
     label 'slurm'
-    time { 15.minute * task.attempt }
+    time { 5.minute * task.attempt }
     memory { 2.GB * task.attempt }
 
     input:
@@ -175,11 +199,36 @@ process split_ome_frames {
     """
 }
 
+process rename_frames {
+    label 'local'
+    publishDir "../Datasets/${params.dataset}/frames", mode: 'copy'
+
+    input:
+    path(in_dir)
+
+    output:
+    file('frame_*.*')
+
+    """
+    #!/usr/bin/env python
+
+    import os
+    import shutil
+    import pathlib
+
+    for i, raw_fn in enumerate(sorted(os.listdir("${in_dir}"))):
+        new_fn = f"frame_{i+1:05}{pathlib.Path(raw_fn).suffix}"
+        shutil.copy2(os.path.join("${in_dir}", raw_fn), new_fn)
+    """
+}
+
 workflow {
-    // Split .ome files up into 1 tiff per frame if XML is present
+    // Split .ome files up into 1 image per frame if XML is present
+    // Otherwise rename images into the same frame_<frameid> convention
     xml_chan = file("../Datasets/${params.dataset}/raw/*companion.ome*")
     if (xml_chan.isEmpty()) {
-        allFiles = channel.fromPath("../Datasets/${params.dataset}/raw/*.tif*")
+        // Rename files to frame_<frameid>.<ext>
+        allFiles = rename_frames(file("../Datasets/${params.dataset}/raw")).flatten()
     } else {
 	    // Obtain a list of all the frames in the dataset in the format:
 	    // (ome filename, ome frame index, overall frame index)
@@ -205,16 +254,19 @@ workflow {
       | collect
       | track_images
 
+    // Filter to having a minimum number of observations per cell, will error if 0 cells
+    trackmate_feats = filter_minimum_observations(track_images.out.features)
+
     // Generate CellPhe features on each frame separately
     // Then combine and add the summary features (density, velocity etc..., then time-series features)
     static_feats = cellphe_frame_features_image(
         allFiles,
-        track_images.out.trackmate_features,
+        trackmate_feats,
         track_images.out.rois
     )
       | collect
       | combine_frame_features
 
-    create_frame_summary_features(static_feats, track_images.out.trackmate_features)
+    create_frame_summary_features(static_feats, trackmate_feats)
       | cellphe_time_series_features
 }

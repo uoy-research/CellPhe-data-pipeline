@@ -117,11 +117,12 @@ sl561@research0:/shared/storage/bioldata/bl-cellphe/CellPhe-data-pipeline$ ls
 bin  nextflow.config  process_dataset.nf  process_dataset.sh  README.md  run.sh
 ```
 
-`run.sh` is the pipeline launcher and it takes 3 arguments:
+`run.sh` is the pipeline launcher and it takes 4 arguments:
 
   1. ID of the folder on GoogleDrive containing the images
   2. Desired output folder name
   3. A pattern matching the images
+  4. **Optional**: The name of the CellPose model to use, defaulting to `cyto3`. If set to `iolight` then it uses the custom model that Le trained
 
 The screenshot below shows how to obtain the ID of the Google Drive folder `CellPhe2 Project/LiveCyte Data/June 14 drug - Outputs/Raw Data/2024-06-14_15-18-15/Images` by navigating to the folder in a web-browser and copying the last string of letters and numbers (highlighted).
 
@@ -169,13 +170,6 @@ executor >  local (724), slurm (721)
 [-        ] process > cellphe_time_series_features  -
 ```
 
-Occasionally you might encounter an error such as below.
-Not to worry, these jobs will be resubmitted to Viking but with additional resources (i.e. time and memory) so that they should successfully complete.
-
-```Shell
-[40/e027a1] NOTE: Process `segment_image(20)` terminated with an error exit status (140) -- Execution is retried (1)
-```
-
 Once the job has completed there will be a summary detailing how long the job took (note that this particular example took 13 minutes in real-time, but used 6 computer hours, how long it would have taken without parallelisation).
 The pipeline outputs are then transferred to `bioldata` where they can be seen in the `Datasets` folder.
 
@@ -198,6 +192,8 @@ The outputs are:
     - The ROIs - can be opened directly in ImageJ
   - `trackmate_features.csv`
     - The output from the TrackMate tracking
+  - `trackmate_features_filtered.csv`
+    - The output from the TrackMate tracking **after** filtering to cells that were tracked for the required number of observations (default 50)
 
 ```Shell
 executor >  local (724), slurm (1446)
@@ -239,14 +235,55 @@ sl561@research0:/shared/storage/bioldata/bl-cellphe/Datasets/2024-06-14-Drug-C4_
 frame_features.csv  frames  masks  raw  rois.zip  time_series_features.csv  trackmate_features.csv
 ```
 
+## Error messages
+
+### Retrying execution
+
+Occasionally you might encounter an error such as below.
+Not to worry, these jobs will be resubmitted to Viking but with additional resources (i.e. time and memory) so that they should successfully complete and it won't affect the overall pipeline.
+
+```Shell
+[40/e027a1] NOTE: Process `segment_image(20)` terminated with an error exit status (140) -- Execution is retried (1)
+```
+
+
+### Missing trackmate features
+
+Another error you might encounter is an error in `executing process > 'filter_minimum_observations'` due to a missing file `trackmate_features_filtered.csv`.
+This means that there weren't any cells that are tracked for the minimum number of observations (50 by default).
+This error will terminate the entire pipeline as features can't be extracted for 0 cells!
+If you encounter this, try again with different segmentation and/or tracking parameters.
+
+```Shell
+executor >  local (1), slurm (475)
+[16/62c797] process > rename_frames                 [100%] 1 of 1 ✔
+[d7/d4b5d4] process > segment_image (105)           [100%] 473 of 473, failed...
+[57/a70edd] process > track_images                  [100%] 1 of 1 ✔
+[03/75566b] process > filter_minimum_observations   [100%] 1 of 1, failed: 1 ✘
+[-        ] process > cellphe_frame_features_image  -
+[-        ] process > combine_frame_features        -
+[-        ] process > create_frame_summary_features -
+[-        ] process > cellphe_time_series_features  -
+Execution cancelled -- Finishing pending tasks before exit
+ERROR ~ Error executing process > 'filter_minimum_observations'
+
+Caused by:
+  Missing output file(s) `trackmate_features_filtered.csv` expected by process `filter_minimum_observations`
+```
+
 # Tips
 
 ## Tmux
 
 If you are on an unstable connection, or just want the added security, you can run the pipeline from within a `tmux` session which means that if your connection to `research0` is lost then the pipeline won't terminate.
-To do so, simply run `tmux` after connecting to `research0` then run the pipeline as usual.
-If your SSH connection is later lost, you can reconnect to `research0` and run `tmux attach` and it will resume your last session with the pipeline still running.
-To exit a `tmux` session press Ctrl-D, and a second Ctrl-D to disconnect from `research0` itself.
+Simply run `tmux` after connecting to `research0` - you can tell if this has worked because you will now have a green bar at the bottom of the terminal.
+You can now launch the pipeline in the same way as before by running the `./run.sh ...` command.
+
+If your SSH connection is lost while the pipeline is running, you can reconnect to `research0` and run `tmux attach` and it will resume your last session with the pipeline still running.
+Or, if you simply want to close the connection (for example if you want to shutdown your laptop or disconnect it from the internet), you can exit the `tmux` session with Ctrl-B + D.
+This will take you back into your shell session on `research0`, so you can now disconnect entirely with `Ctrl-D`.
+As before, when you reconnect to `research0` you can run `tmux attach` to resume your session.
+To exit a `tmux` session (rather than just leaving it running in the background) press Ctrl-D.
 
 ## Mapping bioldata on personal machine
 
