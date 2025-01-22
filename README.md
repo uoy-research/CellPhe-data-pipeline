@@ -192,6 +192,8 @@ The outputs are:
     - The ROIs - can be opened directly in ImageJ
   - `trackmate_features.csv`
     - The output from the TrackMate tracking
+  - `trackmate_features_filtered.csv`
+    - The output from the TrackMate tracking **after** filtering to cells that were tracked for the required number of observations (default 50)
 
 ```Shell
 executor >  local (724), slurm (1446)
