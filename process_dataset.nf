@@ -24,7 +24,7 @@ process track_images {
     label 'slurm'
     cpus 4
     time { 30.minute * task.attempt }
-    memory { 32.GB * task.attempt }
+    memory { 32.GB * Math.pow(2, task.attempt) }
     publishDir "../Datasets/${params.dataset}/", mode: 'copy'
 
     input:
