@@ -255,7 +255,7 @@ process create_tiff_stack {
 
     script:
     """
-    tiffcp "${frames}" frames_stacked.tiff
+    tiffcp ${frames} frames_stacked.tiff
     """
 }
 

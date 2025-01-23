@@ -14,7 +14,7 @@ ml load LibTIFF/4.6.0-GCCcore-13.2.0
 ml load ImageMagick/7.1.1-34-GCCcore-13.2.0
 source /mnt/scratch/projects/biol-imaging-2024/venv/bin/activate
 
-CMD="nextflow run process_dataset.nf --dataset $DATASET"
+CMD="srun --ntasks=1 --cpus-per-task 4 --mem=8G --time=120 nextflow run process_dataset.nf -resume -work-dir ../Datasets/$DATASET/.work --dataset $DATASET"
 if [ $MODEL != 'default' ]
 then
     CMD="${CMD} --cellpose_model ${MODEL}"
