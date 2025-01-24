@@ -255,7 +255,7 @@ process create_tiff_stack {
 
     script:
     """
-    tiffcp "${frames}" frames_stacked.tiff
+    tiffcp ${frames} frames_stacked.tiff
     """
 }
 
@@ -270,7 +270,7 @@ process convert_jpeg {
 
     script:
     """
-    magick mogrify -format tiff ${infile} -compress lzw
+    magick ${infile} -colorspace Gray -compress lzw -set filename:basename "%[basename]" "%[filename:basename].tiff"
     """
 }
 
