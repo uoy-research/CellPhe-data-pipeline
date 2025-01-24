@@ -3,7 +3,7 @@ params.cellpose_model = 'cyto3'
 
 process segment_image {
     label 'slurm'
-    time { 10.minute * task.attempt }
+    time { 5.minute * task.attempt }
     memory { 2.GB * task.attempt }
     publishDir "../Datasets/${params.dataset}/masks", mode: 'copy'
 
@@ -24,7 +24,7 @@ process track_images {
     label 'slurm'
     cpus 4
     time { 30.minute * task.attempt }
-    memory { 32.GB * task.attempt }
+    memory { 32.GB * Math.pow(2, task.attempt) }
     publishDir "../Datasets/${params.dataset}/", mode: 'copy'
 
     input:
@@ -185,29 +185,29 @@ process ome_get_filename {
 
 process split_ome_frames {
     label 'local'
-    publishDir "../Datasets/${params.dataset}/frames", mode: 'copy'
 
     input:
     tuple path(ome_fn), val(frame_index), val(global_frame_index)
     
     output:
-    file('frame_*.tiff')
+    file('ome_split_*.tiff')
 
     script:
     """
-    tiffcp ${ome_fn},${frame_index} frame_${global_frame_index}.tiff
+    tiffcp ${ome_fn},${frame_index} ome_split_${global_frame_index}.tiff
     """
 }
 
 process rename_frames {
-    label 'local'
-    publishDir "../Datasets/${params.dataset}/frames", mode: 'copy'
+    label 'slurm'
+    time { 5.minute * task.attempt }
+    memory { 4.GB * task.attempt }
 
     input:
-    path(in_dir)
+    path in_files
 
     output:
-    file('frame_*.*')
+    file('frame_*.tiff')
 
     """
     #!/usr/bin/env python
@@ -216,38 +216,112 @@ process rename_frames {
     import shutil
     import pathlib
 
-    for i, raw_fn in enumerate(sorted(os.listdir("${in_dir}"))):
-        new_fn = f"frame_{i+1:05}{pathlib.Path(raw_fn).suffix}"
-        shutil.copy2(os.path.join("${in_dir}", raw_fn), new_fn)
+    raw_fns = "${in_files}".split(" ")
+    for i, raw_fn in enumerate(sorted(raw_fns)):
+        new_fn = f"frame_{i+1:05}.tiff"
+        shutil.copy2(raw_fn, new_fn)
+    """
+}
+
+process split_stacked_tiff {
+    label 'slurm'
+    time { 5.minute * task.attempt }
+    memory { 4.GB * task.attempt }
+
+    input:
+    path(stacked_tiff) 
+
+    output:
+    path "part_*.tif"
+ 
+    script:
+    """
+    tiffsplit "${stacked_tiff}" part_
+    """
+}
+
+process create_tiff_stack {
+    label 'slurm'
+    time { 5.minute * task.attempt }
+    memory { 4.GB * task.attempt }
+    publishDir "../Datasets/${params.dataset}", mode: 'copy'
+
+    input:
+    path(frames) 
+    val dummy
+
+    output:
+    path "frames_stacked.tiff"
+
+    script:
+    """
+    tiffcp "${frames}" frames_stacked.tiff
+    """
+}
+
+process convert_jpeg {
+    label 'local'
+
+    input:
+    path(infile) 
+
+    output:
+    path "*.tiff"
+
+    script:
+    """
+    magick mogrify -format tiff ${infile} -compress lzw
     """
 }
 
 workflow {
-    // Split .ome files up into 1 image per frame if XML is present
-    // Otherwise rename images into the same frame_<frameid> convention
-    xml_chan = file("../Datasets/${params.dataset}/raw/*companion.ome*")
-    if (xml_chan.isEmpty()) {
-        // Rename files to frame_<frameid>.<ext>
-        allFiles = rename_frames(file("../Datasets/${params.dataset}/raw")).flatten()
-    } else {
-	    // Obtain a list of all the frames in the dataset in the format:
-	    // (ome filename, ome frame index, overall frame index)
-        xml1 = ome_get_filename(xml_chan)
+    // Handle 4 possible inputs:
+    //    1. OME.TIFF (identified by companion.ome XML file) - need splitting into frame per tiff
+    //    2. JPEG per frame - need converting into TIFFs
+    //    3. Single TIFF - TIFF stack that needs splitting into frame per tiff
+    //    4. Multiple TIFFs - already in 1 frame per tiff
+    // The outcome of this input processing is to get a set of TIFFs with 1 per frame named
+    // as frame_<frameindex>.tiff. This is stored in the channel allFiles and will be used
+    // for all downstream analyses
+
+    ome_companion = file("../Datasets/${params.dataset}/raw/*companion.ome*")
+    jpegs = files("../Datasets/${params.dataset}/raw/*.{jpg,jpeg,JPG,JPEG}")
+    tiffs = files("../Datasets/${params.dataset}/raw/*.{tif,tiff,TIF,TIFF}")
+    if (!ome_companion.isEmpty()) {
+        // OME that needs splitting into 1 tiff per frame
+        // Obtain a list of all the frames in the dataset in the format:
+        // (ome filename, ome frame index, overall frame index)
+        xml1 = ome_get_filename(ome_companion)
             | splitText()
             | map( it -> it.trim())
             | map( it -> file("../Datasets/${params.dataset}/raw/" + it) )
-        xml2 = ome_get_frame_t(xml_chan)
+        xml2 = ome_get_frame_t(ome_companion)
                 | splitText()
                 | map( it -> it.trim())
-        xml3 = ome_get_global_t(xml_chan)
+        xml3 = ome_get_global_t(ome_companion)
                 | splitText()
                 | map( it -> it.trim())
-                | map( it -> (it.toInteger() + 1).toString().padLeft(5, "0"))  // TODO possible to get the maximum number of frames dynamically?
-        allFiles = xml1
+        separate = xml1
             | merge(xml2)
             | merge(xml3)
             | split_ome_frames
+        frameFiles = separate.collect()
+    } else if (!jpegs.isEmpty()) {
+        // JPEGs need converting to TIFF
+        frameFiles = convert_jpeg(channel.fromList(jpegs)).collect()
+    } else if (tiffs.size() == 1) {
+        // TIFF stack that needs splitting into 1 tiff per frame
+	frameFiles = split_stacked_tiff(tiffs[0])
+    } else if (tiffs.size() > 1) {
+	frameFiles = channel.fromList(tiffs).collect()
+    } else {
+        // Fallback, shouldn't get here
+        println "No image files found!"
+        frameFiles = channel.empty()
     }
+
+    // Rename all frames to standard frame_<frameid>.<ext>
+    allFiles = rename_frames(frameFiles).flatten()
 
     // Segment all images and track
     segment_image(allFiles)
@@ -267,6 +341,8 @@ workflow {
       | collect
       | combine_frame_features
 
-    create_frame_summary_features(static_feats, trackmate_feats)
+    finished = create_frame_summary_features(static_feats, trackmate_feats)
       | cellphe_time_series_features
+
+    create_tiff_stack(allFiles.collect(), finished)
 }
