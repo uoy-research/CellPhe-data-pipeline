@@ -256,6 +256,7 @@ process create_tiff_stack {
     script:
     """
     tiffcp ${frames} frames_stacked.tiff
+    """
 }
 
 process convert_jpeg {
