@@ -11,12 +11,12 @@ process segment_image {
     path input_fn
 
     output:
-    path "*.mask.tif"
+    path "*_mask.png"
  
     script:
     outName = input_fn.baseName 
     """
-    segment_image.py ${input_fn} ${params.cellpose_model} ${outName}.mask.tif
+    segment_image.py ${input_fn} ${params.cellpose_model} ${outName}_mask.png
     """
 }
 
@@ -37,7 +37,7 @@ process track_images {
     script:
     """
     mkdir masks
-    mv *.mask.tif masks
+    mv *_mask.png masks
     track_images.py masks rois.zip trackmate_features.csv "$task.memory"
     """
 }
