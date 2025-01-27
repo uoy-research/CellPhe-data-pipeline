@@ -4,7 +4,7 @@ params.cellpose_model = 'cyto3'
 process segment_image {
     label 'slurm'
     time { 5.minute * task.attempt }
-    memory { 2.GB * task.attempt }
+    memory { 4.GB * task.attempt }
     publishDir "../Datasets/${params.dataset}/masks", mode: 'copy'
 
     input:
