@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-import argparse
-import os
-import glob
 from cellpose import models
-from cellphe.input import read_tiff
+import argparse
+import numpy as np
+from PIL import Image
 from skimage import io
 
 parser = argparse.ArgumentParser(
@@ -16,9 +15,8 @@ args = parser.parse_args()
 
 if args.model.lower() == 'iolight':
     model = models.CellposeModel(gpu=False, pretrained_model="/mnt/scratch/projects/biol-imaging-2024/CP_20241218_ioLight")
-
 else:
     model = models.CellposeModel(gpu=False, model_type=args.model)
-image = read_tiff(args.input)
-masks = model.eval(image)[0]
+image = np.array(Image.open(args.input))
+masks = model.eval(image, channels=[0, 0])[0]
 io.imsave(args.output, masks.astype("uint16"))  # Assuming masks are uint16
