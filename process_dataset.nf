@@ -5,6 +5,10 @@ params.segmentation = ''
 params.tracking = ''
 params.cellphe = ''
 
+cellpose_model_opts = JsonOutput.toJson(params.segmentation.model)
+cellpose_eval_opts = JsonOutput.toJson(params.segmentation.eval)
+trackmate_opts = JsonOutput.toJson(params.tracking)
+
 process segment_image {
     label 'slurm'
     time { 5.minute * task.attempt }
@@ -20,7 +24,7 @@ process segment_image {
     script:
     outName = input_fn.baseName 
     """
-    segment_image.py ${input_fn} ${outName}_mask.png ${params.segmentation.model} ${params.segmentation.eval}
+    segment_image.py ${input_fn} ${outName}_mask.png '${cellpose_model_opts}' '${cellpose_eval_opts}'
     """
 }
 
@@ -42,7 +46,7 @@ process track_images {
     """
     mkdir masks
     mv *_mask.png masks
-    track_images.py masks rois.zip trackmate_features.csv "$task.memory" ${params.tracking}
+    track_images.py masks rois.zip trackmate_features.csv '$task.memory' '${trackmate_opts}'
     """
 }
 
