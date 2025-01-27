@@ -1,5 +1,10 @@
+import groovy.json.JsonOutput
 params.dataset = ''
 params.cellpose_model = 'cyto3'
+// Populated by params file
+params.segmentation = ''
+params.tracking = ''
+params.cellphe = ''
 
 process segment_image {
     label 'slurm'
@@ -59,7 +64,7 @@ process filter_minimum_observations {
     import pandas as pd
 
     raw_feats = pd.read_csv("${features_original}")
-    filtered = raw_feats.groupby("TRACK_ID").filter(lambda x: x["FRAME"].count() >= 50)
+    filtered = raw_feats.groupby("TRACK_ID").filter(lambda x: x["FRAME"].count() >= int(${params.cellphe.minimum_observations}))
     if filtered.shape[0] > 0:
         filtered.to_csv("trackmate_features_filtered.csv", index=False)
     """
@@ -80,7 +85,7 @@ process cellphe_frame_features_image {
  
     script:
     """
-    frame_features_image.py ${trackmate_csv} ${image_fn} ${roi_fn}
+    frame_features_image.py ${trackmate_csv} ${image_fn} ${roi_fn} --min_cell ${params.cellphe.minimum_cell_size}
     """
 }
 
@@ -311,9 +316,9 @@ workflow {
         frameFiles = convert_jpeg(channel.fromList(jpegs)).collect()
     } else if (tiffs.size() == 1) {
         // TIFF stack that needs splitting into 1 tiff per frame
-	frameFiles = split_stacked_tiff(tiffs[0])
+        frameFiles = split_stacked_tiff(tiffs[0])
     } else if (tiffs.size() > 1) {
-	frameFiles = channel.fromList(tiffs).collect()
+        frameFiles = channel.fromList(tiffs).collect()
     } else {
         // Fallback, shouldn't get here
         println "No image files found!"
