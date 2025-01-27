@@ -27,7 +27,6 @@
       "ALTERNATIVE_LINKING_COST_FACTOR": 1.05,
       "CUTOFF_PERCENTILE": 0.9,
       "BLOCKING_VALUE": "Infinity"
-      }
     }
   },
   "cellphe": {
