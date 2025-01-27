@@ -23,7 +23,7 @@ try:
         mask_dir = args.mask_dir,
         csv_filename = args.csv_filename,
         roi_filename = args.roi_filename,
-        tracker = config['algorithm']
+        tracker = config['algorithm'],
         tracker_settings = config['settings'],
         max_heap=requested_memory
     )
