@@ -1,6 +1,5 @@
 import groovy.json.JsonOutput
 params.dataset = ''
-params.cellpose_model = 'cyto3'
 // Populated by params file
 params.segmentation = ''
 params.tracking = ''
@@ -21,7 +20,7 @@ process segment_image {
     script:
     outName = input_fn.baseName 
     """
-    segment_image.py ${input_fn} ${params.cellpose_model} ${outName}_mask.png
+    segment_image.py ${input_fn} ${outName}_mask.png ${params.segmentation.model} ${params.segmentation.eval}
     """
 }
 
