@@ -25,8 +25,7 @@
       "SPLITTING_MAX_DISTANCE": 5.0,
       "SPLITTING_FEATURE_PENALTIES": {},
       "ALTERNATIVE_LINKING_COST_FACTOR": 1.05,
-      "CUTOFF_PERCENTILE": 0.9,
-      "BLOCKING_VALUE": "Infinity"
+      "CUTOFF_PERCENTILE": 0.9
     }
   },
   "cellphe": {
