@@ -30,9 +30,9 @@ process segment_image {
 
 process track_images {
     label 'slurm'
-    clusterOptions '--cpus-per-task=16 --ntasks=1'
+    clusterOptions '--cpus-per-task=64 --ntasks=1'
     time { 60.minute * task.attempt }
-    memory { 32.GB * task.attempt }
+    memory { 64.GB * task.attempt }
     publishDir "../Datasets/${params.dataset}/", mode: 'copy'
 
     input:
@@ -76,7 +76,7 @@ process filter_minimum_observations {
 process cellphe_frame_features_image {
     label 'slurm'
     time { 5.minute * task.attempt }
-    memory { 2.GB * task.attempt }
+    memory { 16.GB * task.attempt }
 
     input:
     path image_fn
