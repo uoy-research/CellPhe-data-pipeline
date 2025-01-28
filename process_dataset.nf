@@ -3,7 +3,7 @@ params.dataset = ''
 // Populated by params file
 params.segmentation = ''
 params.tracking = ''
-params.cellphe = ''
+params.QC = ''
 
 cellpose_model_opts = JsonOutput.toJson(params.segmentation.model)
 cellpose_eval_opts = JsonOutput.toJson(params.segmentation.eval)
@@ -50,7 +50,7 @@ process track_images {
     """
 }
 
-process filter_minimum_observations {
+process filter_size_and_observations {
     label 'slurm'
     time { 5.minute * task.attempt }
     memory { 8.GB * task.attempt }
@@ -65,11 +65,11 @@ process filter_minimum_observations {
     """
     #!/usr/bin/env python
     import pandas as pd
-
-    raw_feats = pd.read_csv("${features_original}")
-    filtered = raw_feats.groupby("TRACK_ID").filter(lambda x: x["FRAME"].count() >= int(${params.cellphe.minimum_observations}))
-    if filtered.shape[0] > 0:
-        filtered.to_csv("trackmate_features_filtered.csv", index=False)
+    feats = pd.read_csv("${features_original}")
+    feats = feats.loc[feats['AREA'] >= int(${params.QC.minimum_cell_size})]
+    feats = feats.groupby("TRACK_ID").filter(lambda x: x["FRAME"].count() >= int(${params.QC.minimum_observations}))
+    if feats.shape[0] > 0:
+        feats.to_csv("trackmate_features_filtered.csv", index=False)
     """
 }
 
@@ -88,7 +88,7 @@ process cellphe_frame_features_image {
  
     script:
     """
-    frame_features_image.py ${trackmate_csv} ${image_fn} ${roi_fn} --min_cell ${params.cellphe.minimum_cell_size}
+    frame_features_image.py ${trackmate_csv} ${image_fn} ${roi_fn}
     """
 }
 
@@ -336,8 +336,8 @@ workflow {
       | collect
       | track_images
 
-    // Filter to having a minimum number of observations per cell, will error if 0 cells
-    trackmate_feats = filter_minimum_observations(track_images.out.features)
+    // QC step, filter on size and number of observations
+    trackmate_feats = filter_size_and_observations(track_images.out.features)
 
     // Generate CellPhe features on each frame separately
     // Then combine and add the summary features (density, velocity etc..., then time-series features)

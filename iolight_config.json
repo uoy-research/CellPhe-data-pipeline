@@ -28,7 +28,7 @@
       "CUTOFF_PERCENTILE": 0.9
     }
   },
-  "cellphe": {
+  "QC": {
     "minimum_observations": 50,
     "minimum_cell_size": 50
   }

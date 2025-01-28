@@ -15,8 +15,6 @@ parser = argparse.ArgumentParser(
 parser.add_argument('trackmate_file', help="Input trackmate CSV file")
 parser.add_argument('image_file', help="Input frame filepath")
 parser.add_argument('roi_file', help="Input ROIs archive")
-parser.add_argument('--min_cell', help="Minimum cell size",
-type=int, default=8)
 args = parser.parse_args()
 
 df = import_data(args.trackmate_file, "Trackmate_auto")
@@ -48,13 +46,6 @@ for cell_id in cell_ids:
         continue
     # No negative coordinates
     roi = np.maximum(roi, 0)
-    # Ensure cell is minimum size
-    max_dims = roi.max(axis=0)
-    min_dims = roi.min(axis=0)
-    range_dims = max_dims - min_dims + 1
-    if np.any(range_dims < args.min_cell):
-        continue
-
     # Calculate static features of the frame/cell pair
     static_features = extract_static_features(image, roi)
 
