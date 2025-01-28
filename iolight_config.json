@@ -30,6 +30,6 @@
   },
   "cellphe": {
     "minimum_observations": 50,
-    "minimum_cell_size": 8
+    "minimum_cell_size": 50
   }
 }
