@@ -30,9 +30,9 @@ process segment_image {
 
 process track_images {
     label 'slurm'
-    cpus 4
-    time { 30.minute * task.attempt }
-    memory { 32.GB * Math.pow(2, task.attempt) }
+    clusterOptions '--cpus-per-task=16 --ntasks=1'
+    time { 60.minute * task.attempt }
+    memory { 32.GB * task.attempt }
     publishDir "../Datasets/${params.dataset}/", mode: 'copy'
 
     input:
