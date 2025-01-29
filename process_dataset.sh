@@ -4,7 +4,6 @@
 #   - 1: Dataset name
 #   - 2: Config file
 DATASET=${1}
-CONFIG=${2}
 
 ml load Python/3.11.5-GCCcore-13.2.0
 ml load Nextflow/23.10.0
@@ -15,5 +14,5 @@ ml load ImageMagick/7.1.1-34-GCCcore-13.2.0
 source /mnt/scratch/projects/biol-imaging-2024/venv/bin/activate
 export CELLPOSE_LOCAL_MODELS_PATH=/mnt/scratch/projects/biol-imaging-2024/cellpose
 
-CMD="srun --ntasks=1 --cpus-per-task 4 --mem=8G --time=120 nextflow run process_dataset.nf -work-dir ../Datasets/$DATASET/.work --dataset $DATASET -params-file $CONFIG"
+CMD="srun --ntasks=1 --cpus-per-task 4 --mem=8G --time=120 nextflow run process_dataset.nf -work-dir ../Datasets/$DATASET/.work --dataset $DATASET -params-file ../Datasets/$DATASET/config.json"
 eval $CMD
