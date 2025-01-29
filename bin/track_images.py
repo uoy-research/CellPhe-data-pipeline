@@ -27,5 +27,10 @@ try:
         tracker_settings = config['settings'],
         max_heap=requested_memory
     )
-except Exception:  # Assume OOM - scyjava doesn't make it possible to specify which Java error was thrown
-    sys.exit(125)  # Slurm out-of-memory
+except Exception as e:
+    print(f"Error: {e}")
+    if str(e) == 'java.lang.OutOfMemoryError':
+        code = 125 # Slurm out of memory, will retry
+    else:
+        code = 1
+    sys.exit(code)
