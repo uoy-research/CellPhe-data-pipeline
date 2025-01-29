@@ -21,7 +21,5 @@ rclone --config .rclone.config copyto -v $CONFIG Viking:/mnt/scratch/projects/bi
 NEXTFLOW_CMD="cd /mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline && ./process_dataset.sh $DATASET"
 ssh viking "${NEXTFLOW_CMD}"
 
-# Step 3: Only transfer outputs to network share on job success
-if [ $? -eq 0 ]; then
-    rclone --config .rclone.config copy --exclude ".work/**" -v Viking:/mnt/scratch/projects/biol-imaging-2024/Datasets/$DATASET /shared/storage/bioldata/bl-cellphe/Datasets/$DATASET
-fi
+# Step 3: Transfer outputs to network share
+rclone --config .rclone.config copy --exclude ".work/**" -v Viking:/mnt/scratch/projects/biol-imaging-2024/Datasets/$DATASET /shared/storage/bioldata/bl-cellphe/Datasets/$DATASET
