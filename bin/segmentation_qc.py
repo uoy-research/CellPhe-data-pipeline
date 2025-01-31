@@ -1,3 +1,4 @@
+import argparse
 import re
 import numpy as np
 import pandas as pd
@@ -7,14 +8,17 @@ import os
 import math
 from PIL import Image
 
-# TODO have this come from args
-indir = "/mnt/cellphe/Datasets/2024-11-13-iolight-M231_low_NA_aligned/masks/"
-fns = sorted(os.listdir(indir))
-fns = [os.path.join(indir, x) for x in fns]
+# Extract file paths from arguments
+parser = argparse.ArgumentParser(
+            prog='Segmentation QC',
+            description='Generates summary plots from the segmentation'
+        )
+parser.add_argument('files')
+args = parser.parse_args()
+fns = args.files.split(" ")
 
 # Split into fns to be read just to get counts and those which will keep to plot
 fns_plot = [fns[i] for i in range(len(fns)) if i % 10 == 0]
-fns_count = [fns[i] for i in range(len(fns)) if i % 10 != 0]
 
 def extract_frame_id(fn):
     bn = os.path.basename(fn)
@@ -23,23 +27,6 @@ def extract_frame_id(fn):
 
 def get_image(fn):
     return np.array(Image.open(fn))
-
-def get_counts(fn):
-    img = get_image(fn)
-    df = get_counts_from_image(img)
-    df['frame_id'] = extract_frame_id(fn)
-    return df
-    
-def get_counts_from_image(img):
-    counts = np.unique(img, return_counts=True)
-    df = pd.DataFrame({
-        'mask_id': counts[0],
-        'n': counts[1]
-    })
-    return df.loc[df['mask_id'] != 0]
-
-# TODO scale up!
-counts = pd.concat([get_counts(x) for x in fns_count[:10]])
 
 images = [get_image(fn) for fn in fns_plot]
 
@@ -101,6 +88,31 @@ for i, ax_row in enumerate(axes):
 fig.subplots_adjust(wspace=0.05, hspace=0, top=0.99, left=0.01, bottom=0.01, right=0.99)
 fig.savefig("test.png")
 
-# TODO combine all datasets and generate statistics
-#   - histogram of frames with how many cells
-#   - then histogram of cells with size
+
+# Summary statistics
+def get_counts(fn):
+    img = get_image(fn)
+    counts = np.unique(img, return_counts=True)
+    df = pd.DataFrame({
+        'frame_id': extract_frame_id(fn),
+        'mask_id': counts[0],
+        'n': counts[1]
+    })
+    return df.loc[df['mask_id'] != 0]
+    
+counts = pd.concat([get_counts(x) for x in fns])
+
+def plot_histogram(vals, filename, units):
+    fig, ax = plt.subplots(1,1, figsize=(8, 6))
+    ax.hist(vals)
+    ax.text(1.0, 0.2, vals.describe())
+    ax.set_ylabel("Count")
+    ax.set_xlabel(units)
+    fig.savefig(filename, bbox_inches='tight')
+
+# Summarise how many cells per frame
+cells_per_frame = counts.groupby(['frame_id']).agg('count').reset_index()[['frame_id', 'n']]
+plot_histogram(cells_per_frame['n'], "cells_per_frame.png", "Number of cells in a frame")
+
+# Summarise cell areas
+plot_histogram(counts['n'], "cells_area.png", "Cell size (pixels)")
