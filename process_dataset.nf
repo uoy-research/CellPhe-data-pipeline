@@ -356,23 +356,21 @@ workflow {
       | track_images
       | parse_trackmate_xml
 
-    // TODO parse into CSV and ROIs - use xpath?
-
     // QC step, filter on size and number of observations
-    //trackmate_feats = filter_size_and_observations(track_images.out.features)
+    trackmate_feats = filter_size_and_observations(parse_trackmate_xml.out.features)
 
-    //// Generate CellPhe features on each frame separately
-    //// Then combine and add the summary features (density, velocity etc..., then time-series features)
-    //static_feats = cellphe_frame_features_image(
-    //    allFiles,
-    //    trackmate_feats,
-    //    track_images.out.rois
-    //)
-    //  | collect
-    //  | combine_frame_features
+    // Generate CellPhe features on each frame separately
+    // Then combine and add the summary features (density, velocity etc..., then time-series features)
+    static_feats = cellphe_frame_features_image(
+        allFiles,
+        trackmate_feats,
+        parse_trackmate_xml.out.rois
+    )
+      | collect
+      | combine_frame_features
 
-    //finished = create_frame_summary_features(static_feats, trackmate_feats)
-    //  | cellphe_time_series_features
+    finished = create_frame_summary_features(static_feats, trackmate_feats)
+      | cellphe_time_series_features
 
-    //create_tiff_stack(allFiles.collect(), finished)
+    create_tiff_stack(allFiles.collect(), finished)
 }
