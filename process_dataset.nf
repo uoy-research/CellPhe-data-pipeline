@@ -31,22 +31,22 @@ process segment_image {
 process track_images {
     label 'slurm'
     clusterOptions '--cpus-per-task=64 --ntasks=1'
-    time { 60.minute * task.attempt }
-    memory { 64.GB * task.attempt }
+    time 60.minute
+    memory 64.GB
+    maxRetries 0
     publishDir "../Datasets/${params.dataset}/", mode: 'copy'
 
     input:
     path mask_fns
 
     output:
-    path "rois.zip", emit: rois
-    path "trackmate_features.csv", emit: features
+    path "trackmate.xml"
  
     script:
     """
     mkdir masks
     mv *_mask.png masks
-    track_images.py masks rois.zip trackmate_features.csv '$task.memory' '${trackmate_opts}'
+    track_images.py masks '$task.memory' '${trackmate_opts}' trackmate.xml
     """
 }
 
@@ -336,21 +336,23 @@ workflow {
       | collect
       | track_images
 
+    // TODO parse into CSV and ROIs - use xpath?
+
     // QC step, filter on size and number of observations
-    trackmate_feats = filter_size_and_observations(track_images.out.features)
+    //trackmate_feats = filter_size_and_observations(track_images.out.features)
 
-    // Generate CellPhe features on each frame separately
-    // Then combine and add the summary features (density, velocity etc..., then time-series features)
-    static_feats = cellphe_frame_features_image(
-        allFiles,
-        trackmate_feats,
-        track_images.out.rois
-    )
-      | collect
-      | combine_frame_features
+    //// Generate CellPhe features on each frame separately
+    //// Then combine and add the summary features (density, velocity etc..., then time-series features)
+    //static_feats = cellphe_frame_features_image(
+    //    allFiles,
+    //    trackmate_feats,
+    //    track_images.out.rois
+    //)
+    //  | collect
+    //  | combine_frame_features
 
-    finished = create_frame_summary_features(static_feats, trackmate_feats)
-      | cellphe_time_series_features
+    //finished = create_frame_summary_features(static_feats, trackmate_feats)
+    //  | cellphe_time_series_features
 
-    create_tiff_stack(allFiles.collect(), finished)
+    //create_tiff_stack(allFiles.collect(), finished)
 }
