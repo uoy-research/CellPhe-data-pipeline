@@ -34,7 +34,6 @@ process track_images {
     time 60.minute
     memory 64.GB
     maxRetries 0
-    publishDir "../Datasets/${params.dataset}/", mode: 'copy'
 
     input:
     path mask_fns
@@ -47,6 +46,26 @@ process track_images {
     mkdir masks
     mv *_mask.png masks
     track_images.py masks '$task.memory' '${trackmate_opts}' trackmate.xml
+    """
+}
+
+process parse_trackmate_xml {
+    label 'slurm'
+    clusterOptions '--cpus-per-task=4 --ntasks=1'
+    time { 20.minute * task.attempt }
+    memory { 8.GB * task.attempt }
+    publishDir "../Datasets/${params.dataset}/", mode: 'copy'
+
+    input:
+    path xml_file
+
+    output:
+    path "rois.zip", emit: rois
+    path "trackmate_features.csv", emit: features
+
+    script:
+    """
+    parse_xml.py ${xml_file} rois.zip trackmate_features.csv
     """
 }
 
@@ -335,6 +354,7 @@ workflow {
     segment_image(allFiles)
       | collect
       | track_images
+      | parse_trackmate_xml
 
     // TODO parse into CSV and ROIs - use xpath?
 
