@@ -107,17 +107,20 @@ def get_counts(fn):
     
 counts = pd.concat([get_counts(x) for x in fns])
 
-def plot_histogram(vals, filename, units):
+def plot_histogram(vals, filename, x_lab, y_lab):
     fig, ax = plt.subplots(1,1, figsize=(8, 6))
     ax.hist(vals)
-    ax.text(1.0, 0.2, vals.describe())
-    ax.set_ylabel("Count")
-    ax.set_xlabel(units)
+    props = dict(boxstyle='round', facecolor='grey', alpha=0.15)  # bbox features
+    ax.text(1.03, 0.98, vals.describe(), transform=ax.transAxes, fontsize=12, verticalalignment='top', bbox=props)
+    ax.set_ylabel(y_lab)
+    ax.set_xlabel(x_lab)
+    fig.tight_layout()
     fig.savefig(filename, bbox_inches='tight')
 
 # Summarise how many cells per frame
 cells_per_frame = counts.groupby(['frame_id']).agg('count').reset_index()[['frame_id', 'n']]
-plot_histogram(cells_per_frame['n'], "segmentation_cells_per_frame.png", "Number of cells in a frame")
+plot_histogram(cells_per_frame['n'], "segmentation_cells_per_frame.png", "Number of cells in a frame",
+               "Number of frames")
 
 # Summarise cell areas
-plot_histogram(counts['n'], "segmentation_cells_area.png", "Cell size (pixels)")
+plot_histogram(counts['n'], "segmentation_cells_area.png", "Cell size (pixels)", "Number of cells")
