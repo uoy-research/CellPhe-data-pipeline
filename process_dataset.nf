@@ -32,19 +32,19 @@ process segmentation_qc {
     label 'slurm'
     time { 10.minute * task.attempt }
     memory { 16.GB * task.attempt }
-    publishDir "../Datasets/${params.dataset}/", mode: 'copy'
+    publishDir "../Datasets/${params.dataset}/QC", mode: 'copy'
 
     input:
     path input_files
 
     output:
-    path "masks_stitched.png"
-    path "cells_per_frame.png"
-    path "cells_area.png"
+    path "segmentation_masks_stitched.png"
+    path "segmentation_cells_per_frame.png"
+    path "segmentation_cells_area.png"
 
     script:
     """
-    segmentation_qc.py ${input_files}
+    segmentation_qc.py "${input_files}"
     """
 }
 

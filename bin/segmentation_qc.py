@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import argparse
 import re
 import numpy as np
@@ -62,6 +63,10 @@ fig, axes = plt.subplots(
     figsize=(COLS*2, ROWS*2)
 )
 counter = 0
+# Subplots returns 1D list if request 1 row, force
+# it to always return 2D
+if ROWS == 1:
+    axes = [axes,]
 for i, ax_row in enumerate(axes):
     for j in range(len(ax_row)):
         ax = ax_row[j]
@@ -86,7 +91,7 @@ for i, ax_row in enumerate(axes):
             )
         counter += 1
 fig.subplots_adjust(wspace=0.05, hspace=0, top=0.99, left=0.01, bottom=0.01, right=0.99)
-fig.savefig("masks_stitched.png")
+fig.savefig("segmentation_masks_stitched.png")
 
 
 # Summary statistics
@@ -112,7 +117,7 @@ def plot_histogram(vals, filename, units):
 
 # Summarise how many cells per frame
 cells_per_frame = counts.groupby(['frame_id']).agg('count').reset_index()[['frame_id', 'n']]
-plot_histogram(cells_per_frame['n'], "cells_per_frame.png", "Number of cells in a frame")
+plot_histogram(cells_per_frame['n'], "segmentation_cells_per_frame.png", "Number of cells in a frame")
 
 # Summarise cell areas
-plot_histogram(counts['n'], "cells_area.png", "Cell size (pixels)")
+plot_histogram(counts['n'], "segmentation_cells_area.png", "Cell size (pixels)")
