@@ -86,7 +86,7 @@ for i, ax_row in enumerate(axes):
             )
         counter += 1
 fig.subplots_adjust(wspace=0.05, hspace=0, top=0.99, left=0.01, bottom=0.01, right=0.99)
-fig.savefig("test.png")
+fig.savefig("masks_stitched.png")
 
 
 # Summary statistics
