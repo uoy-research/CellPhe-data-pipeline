@@ -88,10 +88,13 @@ comb_df["FRAME"] = comb_df["FRAME"].astype(int) + 1
 # Create a ROI filename column - 0 padded
 n_digits_track_id = len(str(np.max(comb_df["TRACK_ID"])))
 n_digits_frame_id = len(str(np.max(comb_df["FRAME"])))
+n_digits_spot_id = len(str(np.max(comb_df["ID"])))
 comb_df["ROI_FILENAME"] = (
     comb_df["FRAME"].astype(str).str.pad(n_digits_frame_id, fillchar="0")
     + "-"
     + comb_df["TRACK_ID"].astype(str).str.pad(n_digits_track_id, fillchar="0")
+    + "-"
+    + comb_df["ID"].astype(str).str.pad(n_digits_spot_id, fillchar="0")
 )
 clean_rois = []
 for _, row in comb_df.iterrows():
