@@ -1,5 +1,13 @@
+import groovy.json.JsonOutput
 params.dataset = ''
-params.cellpose_model = 'cyto3'
+// Populated by params file
+params.segmentation = ''
+params.tracking = ''
+params.QC = ''
+
+cellpose_model_opts = JsonOutput.toJson(params.segmentation.model)
+cellpose_eval_opts = JsonOutput.toJson(params.segmentation.eval)
+trackmate_opts = JsonOutput.toJson(params.tracking)
 
 process segment_image {
     label 'slurm'
@@ -16,33 +24,52 @@ process segment_image {
     script:
     outName = input_fn.baseName 
     """
-    segment_image.py ${input_fn} ${params.cellpose_model} ${outName}_mask.png
+    segment_image.py ${input_fn} ${outName}_mask.png '${cellpose_model_opts}' '${cellpose_eval_opts}'
     """
 }
 
 process track_images {
     label 'slurm'
-    cpus 4
-    time { 30.minute * task.attempt }
-    memory { 32.GB * Math.pow(2, task.attempt) }
-    publishDir "../Datasets/${params.dataset}/", mode: 'copy'
+    clusterOptions '--cpus-per-task=64 --ntasks=1'
+    time 60.minute
+    memory 64.GB
+    maxRetries 0
 
     input:
     path mask_fns
 
     output:
-    path "rois.zip", emit: rois
-    path "trackmate_features.csv", emit: features
+    path "trackmate.xml"
  
     script:
     """
     mkdir masks
     mv *_mask.png masks
-    track_images.py masks rois.zip trackmate_features.csv "$task.memory"
+    track_images.py masks '$task.memory' '${trackmate_opts}' trackmate.xml
     """
 }
 
-process filter_minimum_observations {
+process parse_trackmate_xml {
+    label 'slurm'
+    clusterOptions '--cpus-per-task=4 --ntasks=1'
+    time { 20.minute * task.attempt }
+    memory { 8.GB * task.attempt }
+    publishDir "../Datasets/${params.dataset}/", mode: 'copy'
+
+    input:
+    path xml_file
+
+    output:
+    path "rois.zip", emit: rois
+    path "trackmate_features.csv", emit: features
+
+    script:
+    """
+    parse_xml.py ${xml_file} rois.zip trackmate_features.csv
+    """
+}
+
+process filter_size_and_observations {
     label 'slurm'
     time { 5.minute * task.attempt }
     memory { 8.GB * task.attempt }
@@ -57,18 +84,18 @@ process filter_minimum_observations {
     """
     #!/usr/bin/env python
     import pandas as pd
-
-    raw_feats = pd.read_csv("${features_original}")
-    filtered = raw_feats.groupby("TRACK_ID").filter(lambda x: x["FRAME"].count() >= 50)
-    if filtered.shape[0] > 0:
-        filtered.to_csv("trackmate_features_filtered.csv", index=False)
+    feats = pd.read_csv("${features_original}")
+    feats = feats.loc[feats['AREA'] >= int(${params.QC.minimum_cell_size})]
+    feats = feats.groupby("TRACK_ID").filter(lambda x: x["FRAME"].count() >= int(${params.QC.minimum_observations}))
+    if feats.shape[0] > 0:
+        feats.to_csv("trackmate_features_filtered.csv", index=False)
     """
 }
 
 process cellphe_frame_features_image {
     label 'slurm'
     time { 5.minute * task.attempt }
-    memory { 2.GB * task.attempt }
+    memory { 16.GB * task.attempt }
 
     input:
     path image_fn
@@ -311,9 +338,9 @@ workflow {
         frameFiles = convert_jpeg(channel.fromList(jpegs)).collect()
     } else if (tiffs.size() == 1) {
         // TIFF stack that needs splitting into 1 tiff per frame
-	frameFiles = split_stacked_tiff(tiffs[0])
+        frameFiles = split_stacked_tiff(tiffs[0])
     } else if (tiffs.size() > 1) {
-	frameFiles = channel.fromList(tiffs).collect()
+        frameFiles = channel.fromList(tiffs).collect()
     } else {
         // Fallback, shouldn't get here
         println "No image files found!"
@@ -327,16 +354,17 @@ workflow {
     segment_image(allFiles)
       | collect
       | track_images
+      | parse_trackmate_xml
 
-    // Filter to having a minimum number of observations per cell, will error if 0 cells
-    trackmate_feats = filter_minimum_observations(track_images.out.features)
+    // QC step, filter on size and number of observations
+    trackmate_feats = filter_size_and_observations(parse_trackmate_xml.out.features)
 
     // Generate CellPhe features on each frame separately
     // Then combine and add the summary features (density, velocity etc..., then time-series features)
     static_feats = cellphe_frame_features_image(
         allFiles,
         trackmate_feats,
-        track_images.out.rois
+        parse_trackmate_xml.out.rois
     )
       | collect
       | combine_frame_features
