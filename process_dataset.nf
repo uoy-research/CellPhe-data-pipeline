@@ -28,6 +28,26 @@ process segment_image {
     """
 }
 
+process segmentation_qc {
+    label 'slurm'
+    time { 10.minute * task.attempt }
+    memory { 16.GB * task.attempt }
+    publishDir "../Datasets/${params.dataset}/QC", mode: 'copy'
+
+    input:
+    path input_files
+
+    output:
+    path "segmentation_masks_stitched.png"
+    path "segmentation_cells_per_frame.png"
+    path "segmentation_cells_area.png"
+
+    script:
+    """
+    segmentation_qc.py "${input_files}"
+    """
+}
+
 process track_images {
     label 'slurm'
     clusterOptions '--cpus-per-task=64 --ntasks=1'
@@ -351,9 +371,10 @@ workflow {
     allFiles = rename_frames(frameFiles).flatten()
 
     // Segment all images and track
-    segment_image(allFiles)
+    masks = segment_image(allFiles)
       | collect
-      | track_images
+    segmentation_qc(masks)
+    track_images(masks)
       | parse_trackmate_xml
 
     // QC step, filter on size and number of observations
