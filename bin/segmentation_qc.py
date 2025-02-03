@@ -109,7 +109,7 @@ counts = pd.concat([get_counts(x) for x in fns])
 
 def plot_histogram(vals, filename, x_lab, y_lab):
     fig, ax = plt.subplots(1,1, figsize=(8, 6))
-    ax.hist(vals)
+    ax.hist(vals, facecolor = '#2ab0ff', edgecolor='#169acf', linewidth=0.5)
     props = dict(boxstyle='round', facecolor='grey', alpha=0.15)  # bbox features
     ax.text(1.03, 0.98, vals.describe(), transform=ax.transAxes, fontsize=12, verticalalignment='top', bbox=props)
     ax.set_ylabel(y_lab)
