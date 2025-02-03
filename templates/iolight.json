@@ -19,7 +19,7 @@
       "ALLOW_TRACK_MERGING": true,
       "MERGING_MAX_DISTANCE": 50.0,
       "MERGING_FEATURE_PENALTIES": {
-        "area": 0.5
+        "AREA": 0.5
       },
       "ALLOW_TRACK_SPLITTING": true,
       "SPLITTING_MAX_DISTANCE": 5.0,
