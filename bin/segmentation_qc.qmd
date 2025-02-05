@@ -9,7 +9,7 @@ execute:
   warning: false
   message: false
 params:
-    files: "/mnt/cellphe/Datasets/2024-11-13-iolight-M231_low_NA_aligned/masks/frame_00001_mask.png /mnt/cellphe/Datasets/2024-11-13-iolight-M231_low_NA_aligned/masks/frame_00002_mask.png /mnt/cellphe/Datasets/2024-11-13-iolight-M231_low_NA_aligned/masks/frame_00003_mask.png"
+    files: ""
 ---
 
 ```{python setup_python}
