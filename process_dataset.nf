@@ -69,6 +69,26 @@ process track_images {
     """
 }
 
+process tracking_qc {
+    label 'slurm'
+    time { 10.minute * task.attempt }
+    memory { 16.GB * task.attempt }
+    publishDir "../Datasets/${params.dataset}/QC", mode: 'copy'
+
+    input:
+    path notebook
+    path trackmate_raw
+    path trackmate_filtered
+
+    output:
+    path "tracking_qc.html"
+
+    script:
+    """
+    quarto render ${notebook} -P trackmate_fn:${trackmate_raw} -P trackmate_filtered_fn:${trackmate_filtered}
+    """
+}
+
 process parse_trackmate_xml {
     label 'slurm'
     clusterOptions '--cpus-per-task=4 --ntasks=1'
@@ -379,6 +399,13 @@ workflow {
 
     // QC step, filter on size and number of observations
     trackmate_feats = filter_size_and_observations(parse_trackmate_xml.out.features)
+    // Hacky way of getting Nextflow to find the Quarto markdown, since it can't be run with
+    // a shebang like all the other files in bin/
+    tracking_qc(
+        file('/mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/tracking_qc.qmd'),
+	parse_trackmate_xml.out.features,
+        trackmate_feats
+    )
 
     // Generate CellPhe features on each frame separately
     // Then combine and add the summary features (density, velocity etc..., then time-series features)

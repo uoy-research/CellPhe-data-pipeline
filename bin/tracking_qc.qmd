@@ -9,8 +9,8 @@ execute:
   warning: false
   message: false
 params:
-    trackmate_fn: '/mnt/cellphe/Datasets/2024-11-13-iolight-M231_low_NA_aligned/trackmate_features.csv'
-    trackmate_filtered_fn: '/mnt/cellphe/Datasets/2024-11-13-iolight-M231_low_NA_aligned/trackmate_features_filtered.csv'
+    trackmate_fn: ''
+    trackmate_filtered_fn: ''
 ---
 
 ```{r load_data}
