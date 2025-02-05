@@ -35,16 +35,15 @@ process segmentation_qc {
     publishDir "../Datasets/${params.dataset}/QC", mode: 'copy'
 
     input:
+    path notebook
     path input_files
 
     output:
-    path "segmentation_masks_stitched.png"
-    path "segmentation_cells_per_frame.png"
-    path "segmentation_cells_area.png"
+    path "segmentation_qc.html"
 
     script:
     """
-    segmentation_qc.py "${input_files}"
+    quarto render ${notebook} -P files:"${input_files}"
     """
 }
 
@@ -393,7 +392,11 @@ workflow {
     // Segment all images and track
     masks = segment_image(allFiles)
       | collect
-    segmentation_qc(masks)
+    segmentation_qc(
+        file('/mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/segmentation_qc.qmd'),
+        masks
+    )
+
     track_images(masks)
       | parse_trackmate_xml
 
@@ -403,7 +406,7 @@ workflow {
     // a shebang like all the other files in bin/
     tracking_qc(
         file('/mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/tracking_qc.qmd'),
-	parse_trackmate_xml.out.features,
+        parse_trackmate_xml.out.features,
         trackmate_feats
     )
 
