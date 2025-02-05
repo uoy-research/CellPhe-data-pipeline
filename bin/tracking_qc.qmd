@@ -1,0 +1,151 @@
+---
+title: "Tracking QC"
+format: 
+    html:
+        embed-resources: true
+lightbox: true
+execute: 
+  echo: false
+  warning: false
+  message: false
+params:
+    trackmate_fn: '/mnt/cellphe/Datasets/2024-11-13-iolight-M231_low_NA_aligned/trackmate_features.csv'
+    trackmate_filtered_fn: '/mnt/cellphe/Datasets/2024-11-13-iolight-M231_low_NA_aligned/trackmate_features_filtered.csv'
+---
+
+```{r load_data}
+library(tidyverse)
+
+df_raw <- read_csv(params$trackmate_fn)
+df_filtered <- read_csv(params$trackmate_filtered_fn)
+```
+
+
+```{r find_dups}
+duplicate_trackids <- df_filtered |>
+    group_by(FRAME, TRACK_ID) |>
+    filter(n() > 1) 
+n_duplicates <- duplicate_trackids |>
+    nrow()
+track_ids <- if (n_duplicates == 0) '' else sprintf(" with `TRACK_ID`s %s", paste(as.character(sort(duplicate_trackids$TRACK_ID)), collapse=", "))
+```
+
+@fig-tracklength shows the distribution of track lengths both straight out of TrackMate, and after filtering to the `minimum_cell_size` and `minimum_observations` QC parameters.
+All future plots will solely display statistics from the filtered data.
+With how TrackMate assigns `TRACK_ID` as a general lineage id, it is possible that there are multiple cells in the same frame with the same `TRACK_ID`, which would mean they cannot be uniquely identified across frames and thus their CellPhe features should be discarded.
+There are `r n_duplicates` occurrences of this occurring in this dataset`r track_ids`.
+
+```{r fig-tracklength, fig.cap="Histogram of identified track lengths, both pre and post-filtering."}
+# Histogram of track lengths
+df_hist <- rbind(
+    df_raw |>
+      count(TRACK_ID) |>
+      mutate(type="raw"),
+    df_filtered |>
+      count(TRACK_ID) |>
+      mutate(type="filtered")
+) |>
+    mutate(type = factor(type, levels=c("raw", "filtered"),
+                         labels=c("Raw", "After filtering")))
+hist_stats <- df_hist |>
+    group_by(type) |>
+    summarise(
+        min = min(n),
+        median = median(n),
+        max = max(n),
+        n = n()
+    ) |>
+    ungroup() |>
+    mutate(label = sprintf("# tracks: %d\nMin length: %d\nMedian length: %d\nMax length: %d",
+                           n, min, median, max))
+                 
+df_hist |>
+    ggplot(aes(x=n)) +
+        geom_histogram(colour="black", fill="white") +
+        facet_wrap(~type, nrow=1) +
+        geom_label(aes(x=max, y=Inf, label=label), data=hist_stats,
+                   hjust=1, vjust=1) +
+        theme_bw() +
+        labs(x="Number of cells in track", y="Number of tracks")
+```
+
+@fig-frame-to-frame shows the distribution of the frame-to-frame distance covered by each cell.
+
+```{r fig-frame-to-frame, fig.cap="Histogram of the frame-to-frame distance covered by the cells in the filtered data."}
+# Frame-Frame distance (histogram)
+df_frame_dist <- df_filtered |>
+    select(FRAME, TRACK_ID, POSITION_X, POSITION_Y) |>
+    group_by(FRAME, TRACK_ID) |>
+    filter(n() == 1) |>
+    ungroup() |>
+    arrange(FRAME) |>
+    group_by(TRACK_ID) |>
+    mutate(
+        prev_x = lag(POSITION_X),
+        prev_y = lag(POSITION_Y),
+        frame_dist = sqrt((POSITION_X - prev_x)**2 + (POSITION_Y - prev_y)**2)
+    ) |>
+    filter(!is.na(frame_dist)) |>
+    ungroup() 
+
+frame_stats <- df_frame_dist |>
+    summarise(
+        min = min(frame_dist),
+        median = median(frame_dist),
+        max = max(frame_dist)
+    ) |>
+    mutate(label = sprintf("Min distance: %.1f\nMedian distance: %.1f\nMax distance: %.1f",
+                           min, median, max))
+
+df_frame_dist |>
+    ggplot(aes(x=frame_dist)) +
+        geom_histogram(colour="black", fill="white") +
+        geom_label(aes(x=max, y=Inf, label=label), data=frame_stats,
+                   hjust=1, vjust=1) +
+        theme_bw() +
+        labs(x="Frame-to-frame distance", y="Number of cells")
+    
+```
+
+@fig-area-time shows the cumulative distance covered by each cell in order to identify any outliers that might signify tracking errors.
+
+```{r fig-area-time, fig.cap="Time-series of the cumulative distance covered by each cell"}
+# Changing of area frame-frame?
+df_frame_dist |>
+    group_by(TRACK_ID) |>
+    mutate(cum_frame_dist = cumsum(frame_dist)) |>
+    ggplot(aes(x=FRAME, y=cum_frame_dist, group=TRACK_ID)) +
+        geom_line(alpha=0.2) +
+        theme_bw() +
+        labs(x="Frame", y="Cumulative distance covered")
+```
+
+
+@fig-total-dist shows the distribution of total distance covered by each cell.
+
+```{r fig-total-dist, fig.cap="Histogram of the total distance covered by each cell"}
+# Total distance covered per cell
+df_total_dist <- df_frame_dist |>
+    group_by(TRACK_ID) |>
+    summarise(total_dist = sum(frame_dist)) |>
+    ungroup()
+
+dist_stats <- df_total_dist |>
+    summarise(
+        min = min(total_dist),
+        median = median(total_dist),
+        max = max(total_dist)
+    ) |>
+    mutate(label = sprintf("Min distance: %.1f\nMedian distance: %.1f\nMax distance: %.1f",
+                           min, median, max))
+
+df_total_dist |>
+    ggplot(aes(x=total_dist)) +
+        geom_histogram(colour="black", fill="white") +
+        geom_label(aes(x=max, y=Inf, label=label), data=dist_stats,
+                   hjust=1, vjust=1) +
+        theme_bw() +
+        labs(x="Total distance covered", y="Number of cells")
+```
+
+

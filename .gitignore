@@ -3,3 +3,4 @@ datasets/
 .nextflow*
 *.swp
 .rclone.config
+*.html
