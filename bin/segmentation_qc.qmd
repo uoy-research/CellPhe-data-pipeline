@@ -1,4 +1,18 @@
-#!/usr/bin/env python
+---
+title: "Segmentation QC"
+format: 
+    html:
+        embed-resources: true
+lightbox: true
+execute: 
+  echo: false
+  warning: false
+  message: false
+params:
+    files: "/mnt/cellphe/Datasets/2024-11-13-iolight-M231_low_NA_aligned/masks/frame_00001_mask.png /mnt/cellphe/Datasets/2024-11-13-iolight-M231_low_NA_aligned/masks/frame_00002_mask.png /mnt/cellphe/Datasets/2024-11-13-iolight-M231_low_NA_aligned/masks/frame_00003_mask.png"
+---
+
+```{python setup_python}
 import argparse
 import re
 import numpy as np
@@ -8,17 +22,16 @@ from matplotlib.colors import ListedColormap
 import os
 import math
 from PIL import Image
+```
 
-# Extract file paths from arguments
-parser = argparse.ArgumentParser(
-            prog='Segmentation QC',
-            description='Generates summary plots from the segmentation'
-        )
-parser.add_argument('files')
-args = parser.parse_args()
-fns = args.files.split(" ")
+```{r setup_r}
+library(tidyverse)
+library(reticulate)
+```
 
+```{python load_images}
 # Split into fns to be read just to get counts and those which will keep to plot
+fns = r.params['files'].split(" ")
 fns_plot = [fns[i] for i in range(len(fns)) if i % 10 == 0]
 
 def extract_frame_id(fn):
@@ -30,7 +43,9 @@ def get_image(fn):
     return np.array(Image.open(fn))
 
 images = [get_image(fn) for fn in fns_plot]
+```
 
+```{python plot_funcs}
 # Create plots
 def create_cmap(img, page_size=20, palette="Pastel1"):
     n_groups = np.unique(img).size
@@ -51,7 +66,11 @@ def create_cmap(img, page_size=20, palette="Pastel1"):
     rng.shuffle(newcolors)
     newcolors[0, ] = np.array([1, 1, 1, 0.1])
     return ListedColormap(newcolors)
+```
 
+@fig-segmentation shows a stitched plot of the identified segmentation masks from every 10th frame.
+
+```{python fig-segmentation, fig.cap="Segmentation masks for every 10th frame"}
 n_images = len(images)
 COLS = 8
 ROWS = math.ceil(n_images / COLS)
@@ -91,9 +110,9 @@ for i, ax_row in enumerate(axes):
             )
         counter += 1
 fig.subplots_adjust(wspace=0.05, hspace=0, top=0.99, left=0.01, bottom=0.01, right=0.99)
-fig.savefig("segmentation_masks_stitched.png")
+```
 
-
+```{python load_counts}
 # Summary statistics
 def get_counts(fn):
     img = get_image(fn)
@@ -106,21 +125,56 @@ def get_counts(fn):
     return df.loc[df['mask_id'] != 0]
     
 counts = pd.concat([get_counts(x) for x in fns])
+```
 
-def plot_histogram(vals, filename, x_lab, y_lab):
-    fig, ax = plt.subplots(1,1, figsize=(8, 6))
-    ax.hist(vals, facecolor = '#2ab0ff', edgecolor='#169acf', linewidth=0.5)
-    props = dict(boxstyle='round', facecolor='grey', alpha=0.15)  # bbox features
-    ax.text(1.03, 0.98, vals.describe(), transform=ax.transAxes, fontsize=12, verticalalignment='top', bbox=props)
-    ax.set_ylabel(y_lab)
-    ax.set_xlabel(x_lab)
-    fig.tight_layout()
-    fig.savefig(filename, bbox_inches='tight')
+@fig-cells-frame shows the distribution of the number of cells per frame.
 
-# Summarise how many cells per frame
-cells_per_frame = counts.groupby(['frame_id']).agg('count').reset_index()[['frame_id', 'n']]
-plot_histogram(cells_per_frame['n'], "segmentation_cells_per_frame.png", "Number of cells in a frame",
-               "Number of frames")
+```{r import_counts}
+counts <- as_tibble(py$counts)
+```
 
-# Summarise cell areas
-plot_histogram(counts['n'], "segmentation_cells_area.png", "Cell size (pixels)", "Number of cells")
+```{r fig-cells-frame, fig.cap="Histogram of the number of cells in a frame"}
+df_cells <- counts |>
+    count(frame_id)
+cell_stats <- df_cells |>
+    summarise(
+        min = min(n),
+        median = median(n),
+        max = max(n),
+        n = n()
+    ) |>
+    ungroup() |>
+    mutate(label = sprintf("# frames: %d\nMin # cells: %d\nMedian # cells: %d\nMax # cells: %d",
+                           n, min, median, max))
+        
+df_cells |>
+    ggplot(aes(x=n)) +
+        geom_histogram(colour="black", fill="white") +
+        geom_label(aes(x=max, y=Inf, label=label), data=cell_stats,
+                   hjust=1, vjust=1) +
+        theme_bw() +
+        labs(x="Number of cells in a frame", y="Number of frames")
+```
+
+@fig-cells-areas shows the distribution of cell areas.
+
+```{r fig-cells-areas, fig.cap="Histogram of cell areas"}
+area_stats <- counts |>
+    summarise(
+        min = min(n),
+        median = median(n),
+        max = max(n),
+        n = n()
+    ) |>
+    ungroup() |>
+    mutate(label = sprintf("# cells: %d\nMin area: %d\nMedian area: %.0f\nMax area: %d",
+                           n, min, median, max))
+        
+counts |>
+    ggplot(aes(x=n)) +
+        geom_histogram(colour="black", fill="white") +
+        geom_label(aes(x=max, y=Inf, label=label), data=area_stats,
+                   hjust=1, vjust=1) +
+        theme_bw() +
+        labs(x="Cell size (pixels)", y="Number of cells")
+```
