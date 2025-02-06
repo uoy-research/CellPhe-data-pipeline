@@ -1,4 +1,15 @@
 {
+  "folder_names": {
+    "site": "B2_8",
+    "image_type": "Phase",
+    "segmentation": "cyto3",
+    "tracking": "LAP_default"
+  },
+  "run": {
+    "segmentation": true,
+    "tracking": true,
+    "cellphe": true
+  },
   "segmentation": {
     "model": {
       "model_type": "cyto3"
