@@ -1,7 +1,7 @@
 {
   "folder_names": {
-    "site": "B2_8",
-    "image_type": "Phase",
+    "site": "",
+    "image_type": "",
     "segmentation": "cyto3",
     "tracking": "LAP_default"
   },

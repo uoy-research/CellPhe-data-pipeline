@@ -1,7 +1,7 @@
 {
   "folder_names": {
-    "site": "all",
-    "image_type": "Brightfield",
+    "site": "",
+    "image_type": "",
     "segmentation": "iolight",
     "tracking": "LAP_default"
   },
