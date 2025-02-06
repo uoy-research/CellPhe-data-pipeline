@@ -1,19 +1,28 @@
 import groovy.json.JsonOutput
-params.dataset = ''
 // Populated by params file
 params.segmentation = ''
 params.tracking = ''
 params.QC = ''
+params.folder_names = ''
+params.run = ''
 
-cellpose_model_opts = JsonOutput.toJson(params.segmentation.model)
-cellpose_eval_opts = JsonOutput.toJson(params.segmentation.eval)
-trackmate_opts = JsonOutput.toJson(params.tracking)
+// Folder paths
+timelapse_id = "${params.folder_names.site}_${params.folder_names.image_type}"
+raw_dir = "raw/${timelapse_id}"
+processed_dir = "processed/${timelapse_id}"
+seg_dir = "analysis/segmentation/${params.folder_names.segmentation}"
+mask_dir = "${seg_dir}/masks/${timelapse_id}"
+track_dir = "${seg_dir}/tracking/${params.folder_names.tracking}"
+trackmate_dir = "${track_dir}/trackmate"
+trackmate_outputs_dir = "${trackmate_dir}/${timelapse_id}"
+cellphe_dir = "${track_dir}/cellphe"
+cellphe_outputs_dir = "${cellphe_dir}/${timelapse_id}"
 
 process segment_image {
     label 'slurm'
     time { 5.minute * task.attempt }
-    memory { 4.GB * task.attempt }
-    publishDir "../Datasets/${params.dataset}/masks", mode: 'copy'
+    memory { 8.GB * task.attempt }
+    publishDir "${mask_dir}", mode: 'copy'
 
     input:
     path input_fn
@@ -24,7 +33,7 @@ process segment_image {
     script:
     outName = input_fn.baseName 
     """
-    segment_image.py ${input_fn} ${outName}_mask.png '${cellpose_model_opts}' '${cellpose_eval_opts}'
+    segment_image.py ${input_fn} ${outName}_mask.png '${JsonOutput.toJson(params.segmentation.model)}' '${JsonOutput.toJson(params.segmentation.eval)}'
     """
 }
 
@@ -32,18 +41,18 @@ process segmentation_qc {
     label 'slurm'
     time { 10.minute * task.attempt }
     memory { 16.GB * task.attempt }
-    publishDir "../Datasets/${params.dataset}/QC", mode: 'copy'
+    publishDir "${seg_dir}/QC", mode: 'copy'
 
     input:
     path notebook
     path input_files
 
     output:
-    path "segmentation_qc.html"
+    path "*.html"
 
     script:
     """
-    quarto render ${notebook} -P files:"${input_files}"
+    quarto render ${notebook} -P files:"${input_files}" -o "${timelapse_id}.html"
     """
 }
 
@@ -64,7 +73,7 @@ process track_images {
     """
     mkdir masks
     mv *_mask.png masks
-    track_images.py masks '$task.memory' '${trackmate_opts}' trackmate.xml
+    track_images.py masks '$task.memory' '${JsonOutput.toJson(params.tracking)}' trackmate.xml
     """
 }
 
@@ -72,7 +81,7 @@ process tracking_qc {
     label 'slurm'
     time { 10.minute * task.attempt }
     memory { 16.GB * task.attempt }
-    publishDir "../Datasets/${params.dataset}/QC", mode: 'copy'
+    publishDir "${track_dir}/QC", mode: 'copy'
 
     input:
     path notebook
@@ -80,11 +89,11 @@ process tracking_qc {
     path trackmate_filtered
 
     output:
-    path "tracking_qc.html"
+    path "*.html"
 
     script:
     """
-    quarto render ${notebook} -P trackmate_fn:${trackmate_raw} -P trackmate_filtered_fn:${trackmate_filtered}
+    quarto render ${notebook} -P trackmate_fn:${trackmate_raw} -P trackmate_filtered_fn:${trackmate_filtered} -o "${timelapse_id}.html"
     """
 }
 
@@ -93,7 +102,7 @@ process parse_trackmate_xml {
     clusterOptions '--cpus-per-task=4 --ntasks=1'
     time { 20.minute * task.attempt }
     memory { 8.GB * task.attempt }
-    publishDir "../Datasets/${params.dataset}/", mode: 'copy'
+    publishDir "${trackmate_outputs_dir}", mode: 'copy'
 
     input:
     path xml_file
@@ -112,7 +121,7 @@ process filter_size_and_observations {
     label 'slurm'
     time { 5.minute * task.attempt }
     memory { 8.GB * task.attempt }
-    publishDir "../Datasets/${params.dataset}/", mode: 'copy'
+    publishDir "${trackmate_outputs_dir}", mode: 'copy'
 
     input:
     path features_original
@@ -171,7 +180,7 @@ process create_frame_summary_features {
     label 'slurm'
     time { 15.minute * task.attempt }
     memory { 4.GB * task.attempt }
-    publishDir "../Datasets/${params.dataset}/", mode: 'copy'
+    publishDir "${cellphe_outputs_dir}", mode: 'copy'
 
     input:
     path(frame_features_static) 
@@ -190,7 +199,7 @@ process cellphe_time_series_features {
     label 'slurm'
     time { 30.minute * task.attempt }
     memory { 4.GB * task.attempt }
-    publishDir "../Datasets/${params.dataset}/", mode: 'copy'
+    publishDir "${cellphe_outputs_dir}", mode: 'copy'
 
     input:
     path(frame_features) 
@@ -310,11 +319,10 @@ process create_tiff_stack {
     label 'slurm'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
-    publishDir "../Datasets/${params.dataset}", mode: 'copy'
+    publishDir "${processed_dir}", mode: 'copy'
 
     input:
     path(frames) 
-    val dummy
 
     output:
     path "frames_stacked.tiff"
@@ -350,9 +358,9 @@ workflow {
     // as frame_<frameindex>.tiff. This is stored in the channel allFiles and will be used
     // for all downstream analyses
 
-    ome_companion = file("../Datasets/${params.dataset}/raw/*companion.ome*")
-    jpegs = files("../Datasets/${params.dataset}/raw/*.{jpg,jpeg,JPG,JPEG}")
-    tiffs = files("../Datasets/${params.dataset}/raw/*.{tif,tiff,TIF,TIFF}")
+    ome_companion = file("${raw_dir}/*companion.ome*")
+    jpegs = files("${raw_dir}/*.{jpg,jpeg,JPG,JPEG}")
+    tiffs = files("${raw_dir}/*.{tif,tiff,TIF,TIFF}")
     if (!ome_companion.isEmpty()) {
         // OME that needs splitting into 1 tiff per frame
         // Obtain a list of all the frames in the dataset in the format:
@@ -360,7 +368,7 @@ workflow {
         xml1 = ome_get_filename(ome_companion)
             | splitText()
             | map( it -> it.trim())
-            | map( it -> file("../Datasets/${params.dataset}/raw/" + it) )
+            | map( it -> file("${raw_dir}/" + it) )
         xml2 = ome_get_frame_t(ome_companion)
                 | splitText()
                 | map( it -> it.trim())
@@ -389,39 +397,45 @@ workflow {
     // Rename all frames to standard frame_<frameid>.<ext>
     allFiles = rename_frames(frameFiles).flatten()
 
-    // Segment all images and track
-    masks = segment_image(allFiles)
-      | collect
-    segmentation_qc(
-        file('/mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/segmentation_qc.qmd'),
-        masks
-    )
+   if (params.run.segmentation) {
 
-    track_images(masks)
-      | parse_trackmate_xml
+        // Segment all images and track
+        masks = segment_image(allFiles)
+          | collect
+        segmentation_qc(
+            file('/mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/segmentation_qc.qmd'),
+            masks
+        )
+	if (params.run.tracking) {
 
-    // QC step, filter on size and number of observations
-    trackmate_feats = filter_size_and_observations(parse_trackmate_xml.out.features)
-    // Hacky way of getting Nextflow to find the Quarto markdown, since it can't be run with
-    // a shebang like all the other files in bin/
-    tracking_qc(
-        file('/mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/tracking_qc.qmd'),
-        parse_trackmate_xml.out.features,
-        trackmate_feats
-    )
+            track_images(masks)
+              | parse_trackmate_xml
 
-    // Generate CellPhe features on each frame separately
-    // Then combine and add the summary features (density, velocity etc..., then time-series features)
-    static_feats = cellphe_frame_features_image(
-        allFiles,
-        trackmate_feats,
-        parse_trackmate_xml.out.rois
-    )
-      | collect
-      | combine_frame_features
+            // QC step, filter on size and number of observations
+            trackmate_feats = filter_size_and_observations(parse_trackmate_xml.out.features)
+            // Hacky way of getting Nextflow to find the Quarto markdown, since it can't be run with
+            // a shebang like all the other files in bin/
+            tracking_qc(
+                file('/mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/tracking_qc.qmd'),
+                parse_trackmate_xml.out.features,
+                trackmate_feats
+            )
+            if (params.run.cellphe) {
 
-    finished = create_frame_summary_features(static_feats, trackmate_feats)
-      | cellphe_time_series_features
+                // Generate CellPhe features on each frame separately
+                // Then combine and add the summary features (density, velocity etc..., then time-series features)
+                static_feats = cellphe_frame_features_image(
+                    allFiles,
+                    trackmate_feats,
+                    parse_trackmate_xml.out.rois
+                )
+                  | collect
+                  | combine_frame_features
 
-    create_tiff_stack(allFiles.collect(), finished)
+                create_frame_summary_features(static_feats, trackmate_feats)
+                  | cellphe_time_series_features
+            }
+        }
+    }
+    create_tiff_stack(allFiles.collect())
 }
