@@ -13,8 +13,8 @@ params:
 ---
 
 ```{r setup_r}
-library(tidyverse)
-library(reticulate)
+library(tidyverse, lib.loc="/mnt/scratch/projects/biol-imaging-2024/rlib")
+library(reticulate, lib.loc="/mnt/scratch/projects/biol-imaging-2024/rlib")
 Sys.unsetenv("RETICULATE_PYTHON")
 use_virtualenv("/mnt/scratch/projects/biol-imaging-2024/venv")
 ```
