@@ -15,6 +15,7 @@ params:
 ```{r setup_r}
 library(tidyverse)
 library(reticulate)
+Sys.unsetenv("RETICULATE_PYTHON")
 use_virtualenv("/mnt/scratch/projects/biol-imaging-2024/venv")
 ```
 
