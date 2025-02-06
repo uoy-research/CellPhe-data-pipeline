@@ -56,7 +56,7 @@ hist_stats <- df_hist |>
         n = n()
     ) |>
     ungroup() |>
-    mutate(label = sprintf("# tracks: %d\nMin length: %d\nMedian length: %d\nMax length: %d",
+    mutate(label = sprintf("# tracks: %d\nMin length: %d\nMedian length: %.0f\nMax length: %d",
                            n, min, median, max))
                  
 df_hist |>

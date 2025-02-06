@@ -146,7 +146,7 @@ cell_stats <- df_cells |>
         n = n()
     ) |>
     ungroup() |>
-    mutate(label = sprintf("# frames: %d\nMin # cells: %d\nMedian # cells: %d\nMax # cells: %d",
+    mutate(label = sprintf("# frames: %d\nMin # cells: %d\nMedian # cells: %0.f\nMax # cells: %d",
                            n, min, median, max))
         
 df_cells |>
