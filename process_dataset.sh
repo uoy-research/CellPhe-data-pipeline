@@ -18,6 +18,7 @@ ml load LibTIFF/4.6.0-GCCcore-13.2.0
 ml load ImageMagick/7.1.1-34-GCCcore-13.2.0
 ml load Quarto/1.6.39-x86_64-linux
 ml load R/4.4.1-gfbf-2023b
+ml load R-bundle-CRAN/2024.06-foss-2023b
 source /mnt/scratch/projects/biol-imaging-2024/venv/bin/activate
 export CELLPOSE_LOCAL_MODELS_PATH=/mnt/scratch/projects/biol-imaging-2024/cellpose
 
