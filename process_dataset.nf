@@ -130,13 +130,19 @@ process filter_size_and_observations {
     path("trackmate_features_filtered.csv", arity: '1')
 
     """
-    #!/usr/bin/env python
-    import pandas as pd
-    feats = pd.read_csv("${features_original}")
-    feats = feats.loc[feats['AREA'] >= int(${params.QC.minimum_cell_size})]
-    feats = feats.groupby("TRACK_ID").filter(lambda x: x["FRAME"].count() >= int(${params.QC.minimum_observations}))
-    if feats.shape[0] > 0:
-        feats.to_csv("trackmate_features_filtered.csv", index=False)
+    #!/usr/bin/env Rscript
+    library(tidyverse)
+    df <- read_csv("${features_original}")
+    feats <- feats |>
+        filter(
+          AREA >= as.integer(${params.QC.minimum_cell_size})
+        ) |>
+        group_by(TRACK_ID) |>
+        filter(n() >= as.integer(${params.QC.minimum_observations})) |>
+        ungroup()
+    if (nrow(feats) > 0) {
+        write_csv(feats, "trackmate_features_filtered.csv")
+    }
     """
 }
 
