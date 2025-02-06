@@ -133,7 +133,7 @@ process filter_size_and_observations {
     #!/usr/bin/env Rscript
     library(tidyverse)
     df <- read_csv("${features_original}")
-    feats <- feats |>
+    feats <- df |>
         filter(
           AREA >= as.integer(${params.QC.minimum_cell_size})
         ) |>
