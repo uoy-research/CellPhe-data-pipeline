@@ -27,6 +27,8 @@ from PIL import Image
 ```{r setup_r}
 library(tidyverse)
 library(reticulate)
+use_virtualenv("/mnt/scratch/projects/biol-imaging-2024/venv")
+
 ```
 
 ```{python load_images}
