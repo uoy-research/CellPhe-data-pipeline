@@ -58,9 +58,9 @@ process segmentation_qc {
 
 process track_images {
     label 'slurm'
-    clusterOptions '--cpus-per-task=64 --ntasks=1'
-    time 60.minute
-    memory 64.GB
+    clusterOptions '--cpus-per-task=32 --ntasks=1'
+    time { 40.minute * task.attempt }
+    memory { 32.GB * task.attempt }
     maxRetries 0
 
     input:
