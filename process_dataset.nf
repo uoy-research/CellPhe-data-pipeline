@@ -131,7 +131,8 @@ process filter_size_and_observations {
 
     """
     #!/usr/bin/env Rscript
-    library(tidyverse)
+    library(readr)
+    library(dplyr)
     df <- read_csv("${features_original}")
     feats <- df |>
         filter(

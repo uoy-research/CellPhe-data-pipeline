@@ -13,8 +13,10 @@ params:
 ---
 
 ```{r setup_r}
-library(tidyverse, lib.loc="/mnt/scratch/projects/biol-imaging-2024/rlib")
-library(reticulate, lib.loc="/mnt/scratch/projects/biol-imaging-2024/rlib")
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(reticulate)
 Sys.unsetenv("RETICULATE_PYTHON")
 use_virtualenv("/mnt/scratch/projects/biol-imaging-2024/venv")
 ```

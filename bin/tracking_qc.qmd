@@ -14,7 +14,7 @@ params:
 ---
 
 ```{r load_data}
-library(tidyverse, lib.loc="/mnt/scratch/projects/biol-imaging-2024/rlib")
+library(tidyverse)
 
 
 df_raw <- read_csv(params$trackmate_fn)
