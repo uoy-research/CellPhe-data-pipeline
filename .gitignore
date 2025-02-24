@@ -4,3 +4,4 @@ datasets/
 *.swp
 .rclone.config
 *.html
+.DS_Store
