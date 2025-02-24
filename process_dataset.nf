@@ -20,6 +20,7 @@ cellphe_outputs_dir = "${cellphe_dir}/${timelapse_id}"
 
 process segment_image {
     label 'slurm'
+    label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 8.GB * task.attempt }
     publishDir "${mask_dir}", mode: 'copy'
@@ -39,6 +40,7 @@ process segment_image {
 
 process segmentation_qc {
     label 'slurm'
+    label 'slurm_retry'
     time { 10.minute * task.attempt }
     memory { 16.GB * task.attempt }
     publishDir "${seg_dir}/QC", mode: 'copy'
@@ -58,6 +60,7 @@ process segmentation_qc {
 
 process track_images {
     label 'slurm'
+    label 'slurm_retry'
     clusterOptions '--cpus-per-task=32 --ntasks=1'
     time { 40.minute * task.attempt }
     memory { 32.GB * task.attempt }
@@ -79,6 +82,7 @@ process track_images {
 
 process tracking_qc {
     label 'slurm'
+    label 'slurm_retry'
     time { 10.minute * task.attempt }
     memory { 16.GB * task.attempt }
     publishDir "${track_dir}/QC", mode: 'copy'
@@ -99,6 +103,7 @@ process tracking_qc {
 
 process parse_trackmate_xml {
     label 'slurm'
+    label 'slurm_retry'
     clusterOptions '--cpus-per-task=4 --ntasks=1'
     time { 20.minute * task.attempt }
     memory { 8.GB * task.attempt }
@@ -119,6 +124,7 @@ process parse_trackmate_xml {
 
 process filter_size_and_observations {
     label 'slurm'
+    label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 8.GB * task.attempt }
     publishDir "${trackmate_outputs_dir}", mode: 'copy'
@@ -149,6 +155,7 @@ process filter_size_and_observations {
 
 process cellphe_frame_features_image {
     label 'slurm'
+    label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 16.GB * task.attempt }
 
@@ -168,6 +175,7 @@ process cellphe_frame_features_image {
 
 process combine_frame_features {
     label 'slurm'
+    label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
 
@@ -185,6 +193,7 @@ process combine_frame_features {
 
 process create_frame_summary_features {
     label 'slurm'
+    label 'slurm_retry'
     time { 15.minute * task.attempt }
     memory { 4.GB * task.attempt }
     publishDir "${cellphe_outputs_dir}", mode: 'copy'
@@ -204,6 +213,7 @@ process create_frame_summary_features {
 
 process cellphe_time_series_features {
     label 'slurm'
+    label 'slurm_retry'
     time { 30.minute * task.attempt }
     memory { 4.GB * task.attempt }
     publishDir "${cellphe_outputs_dir}", mode: 'copy'
@@ -283,6 +293,7 @@ process split_ome_frames {
 
 process rename_frames {
     label 'slurm'
+    label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
 
@@ -308,6 +319,7 @@ process rename_frames {
 
 process split_stacked_tiff {
     label 'slurm'
+    label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
 
@@ -325,8 +337,8 @@ process split_stacked_tiff {
 
 process create_tiff_stack {
     label 'slurm'
-    time { 5.minute * task.attempt }
-    memory { 4.GB * task.attempt }
+    time 10.minute
+    memory 8.GB
     publishDir "${processed_dir}", mode: 'copy'
     errorStrategy 'ignore'
 
