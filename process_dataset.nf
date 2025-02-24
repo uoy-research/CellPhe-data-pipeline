@@ -328,6 +328,7 @@ process create_tiff_stack {
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
     publishDir "${processed_dir}", mode: 'copy'
+    errorStrategy 'ignore'
 
     input:
     path(frames) 
