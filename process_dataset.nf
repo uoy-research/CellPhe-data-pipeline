@@ -276,7 +276,8 @@ process split_ome_frames {
 
     script:
     """
-    tiffcp ${ome_fn},${frame_index} ome_split_${global_frame_index}.tiff
+    printf -v i "%05d" ${global_frame_index}
+    tiffcp ${ome_fn},${frame_index} "ome_split_\${i}.tiff"
     """
 }
 
