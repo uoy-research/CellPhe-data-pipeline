@@ -47,14 +47,15 @@ process segmentation_qc {
 
     input:
     path notebook
-    path input_files
+    path masks
+    path images
 
     output:
     path "*.html"
 
     script:
     """
-    quarto render ${notebook} -P files:"${input_files}" -o "${timelapse_id}.html"
+    quarto render ${notebook} -P masks:"${masks}" -P images:"${images}" -o "${timelapse_id}.html"
     """
 }
 
@@ -425,7 +426,8 @@ workflow {
           | collect
         segmentation_qc(
             file('/mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/segmentation_qc.qmd'),
-            masks
+            masks,
+            collect(allFiles)
         )
 	if (params.run.tracking) {
 
