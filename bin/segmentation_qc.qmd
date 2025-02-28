@@ -28,6 +28,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+import matplotlib.patheffects as pe
 import os
 import math
 from PIL import Image
@@ -118,7 +119,10 @@ for i, ax_row in enumerate(axes):
             )
             _dummy = ax.set_title(
                 f"Frame {extract_frame_id(mask_fns_plot[counter])}",
-                fontsize=8
+                fontsize=8,
+                y=0.9,
+                color='white',
+		path_effects=[pe.withStroke(linewidth=4, foreground="black")]
             )
         counter += 1
 fig.subplots_adjust(wspace=0.05, hspace=0, top=0.99, left=0.01, bottom=0.01, right=0.99)
