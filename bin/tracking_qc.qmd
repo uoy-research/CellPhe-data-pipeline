@@ -16,6 +16,7 @@ params:
 ```{r load_data}
 library(tidyverse)
 
+
 df_raw <- read_csv(params$trackmate_fn)
 df_filtered <- read_csv(params$trackmate_filtered_fn)
 ```
@@ -24,10 +25,10 @@ df_filtered <- read_csv(params$trackmate_filtered_fn)
 ```{r find_dups}
 duplicate_trackids <- df_filtered |>
     group_by(FRAME, TRACK_ID) |>
-    filter(n() > 1) 
+    filter(n() > 1)
 n_duplicates <- duplicate_trackids |>
     nrow()
-track_ids <- if (n_duplicates == 0) '' else sprintf(" with `TRACK_ID`s %s", paste(as.character(sort(duplicate_trackids$TRACK_ID)), collapse=", "))
+track_ids <- if (n_duplicates == 0) '' else sprintf(" with `TRACK_ID`s %s", paste(as.character(sort(unique(duplicate_trackids$TRACK_ID))), collapse=", "))
 ```
 
 @fig-tracklength shows the distribution of track lengths both straight out of TrackMate, and after filtering to the `minimum_cell_size` and `minimum_observations` QC parameters.
@@ -56,7 +57,7 @@ hist_stats <- df_hist |>
         n = n()
     ) |>
     ungroup() |>
-    mutate(label = sprintf("# tracks: %d\nMin length: %d\nMedian length: %d\nMax length: %d",
+    mutate(label = sprintf("# tracks: %d\nMin length: %d\nMedian length: %.0f\nMax length: %d",
                            n, min, median, max))
                  
 df_hist |>

@@ -1,4 +1,15 @@
 {
+  "folder_names": {
+    "site": "",
+    "image_type": "",
+    "segmentation": "cyto3",
+    "tracking": "LAP_default"
+  },
+  "run": {
+    "segmentation": true,
+    "tracking": true,
+    "cellphe": true
+  },
   "segmentation": {
     "model": {
       "model_type": "cyto3"

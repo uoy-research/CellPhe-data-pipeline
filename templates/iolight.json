@@ -1,4 +1,15 @@
 {
+  "folder_names": {
+    "site": "",
+    "image_type": "",
+    "segmentation": "iolight",
+    "tracking": "LAP_default"
+  },
+  "run": {
+    "segmentation": true,
+    "tracking": true,
+    "cellphe": true
+  },
   "segmentation": {
     "model": {
       "pretrained_model": "/mnt/scratch/projects/biol-imaging-2024/cellpose/CP_20241218_ioLight"

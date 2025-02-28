@@ -12,6 +12,15 @@ params:
     files: ""
 ---
 
+```{r setup_r}
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(reticulate)
+Sys.unsetenv("RETICULATE_PYTHON")
+use_virtualenv("/mnt/scratch/projects/biol-imaging-2024/venv")
+```
+
 ```{python setup_python}
 import argparse
 import re
@@ -22,11 +31,6 @@ from matplotlib.colors import ListedColormap
 import os
 import math
 from PIL import Image
-```
-
-```{r setup_r}
-library(tidyverse)
-library(reticulate)
 ```
 
 ```{python load_images}
@@ -144,7 +148,7 @@ cell_stats <- df_cells |>
         n = n()
     ) |>
     ungroup() |>
-    mutate(label = sprintf("# frames: %d\nMin # cells: %d\nMedian # cells: %d\nMax # cells: %d",
+    mutate(label = sprintf("# frames: %d\nMin # cells: %d\nMedian # cells: %0.f\nMax # cells: %d",
                            n, min, median, max))
         
 df_cells |>

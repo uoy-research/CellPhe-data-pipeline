@@ -1,11 +1,12 @@
 # CellPhe Data Pipeline
 
-Runs a dataset (defined as a collection of tiffs) through the full CellPhe pipeline including:
+Runs a timelapse through the full CellPhe pipeline, including:
 
   - Segmentation
   - Tracking
   - Frame feature extraction
   - Time-series feature extraction
+  - QC report generation
 
 This is run using `Nextflow` which provides several useful features:
 
@@ -99,6 +100,8 @@ If this doesn't work, try again or ask for help in Slack.
 The `research0` machine has the `bioldata` storage already mounted, you can access the CellPhe share by running `cd /shared/storage/bioldata/bl-cellphe` (`cd` stands for Change Directory).
 **NB: tab-completion saves a lot of time typing, i.e. after typing `cd /sh` if you press Tab it will autocomplete the rest of the word `shared`**
 
+You might find it easier to browse the data by mounting the share as a network drive, see the section at the end of this guide for details.
+
 You can see all the files and folders with `ls` (List Directory) which should show you the same as below:
 
 ```Shell
@@ -120,19 +123,52 @@ bin  nextflow.config  process_dataset.nf  process_dataset.sh  README.md  run.sh
 `run.sh` is the pipeline launcher and it takes 4 arguments:
 
   1. ID of the folder on GoogleDrive containing the images
-  2. Desired output folder name
+  2. The Experiment folder name
   3. A pattern matching the images
-  4. **Optional**: The name of the CellPose model to use, defaulting to `cyto3`. If set to `iolight` then it uses the custom model that Le trained
+  4. A config file detailing the pipeline parameters
 
-The screenshot below shows how to obtain the ID of the Google Drive folder `CellPhe2 Project/LiveCyte Data/June 14 drug - Outputs/Raw Data/2024-06-14_15-18-15/Images` by navigating to the folder in a web-browser and copying the last string of letters and numbers (highlighted).
+NB: While the Pipeline itself currently operates on a single timelapse, each Experiment can contain multiple timelapses, corresponding to different sites/wells, or channels.
+I.e. the LiveCyte will run several wells at once and generate both Phase and Brightfield channels, while the ioLight just runs on a single site and only produces Brightfield.
+
+Using the following LiveCyte dataset as an example as it contains both multiple sites and channels, stored in Google Drive at `CellPhe2 Project/LiveCyte Data/June 14 drug - Outputs/Raw Data/2024-06-14_15-18-15/Images`.
+If this dataset hasn't been procesed yet, the first step is to create an Experiment. 
+A sensible name would be '2024-06-14_Drug_LiveCyte' - at least including the data, a brief description of the experiment purpose, and the microscope.
+Create a folder with this name in Experiments.
+
+The screenshot below shows how to obtain the Google Drive folder ID needed by the pipeline by navigating to the folder in a web-browser and copying the last string of letters and numbers (highlighted).
 
 ![How to get the image folder ID](docs/getting_directory_id.png)
 
 This folder contains multiple timelapses from different wells and modalities, such as `C5_7_Phase`, `C5_7_Brightfield`, `C4_5_Phase`, `C4_5_Brightfield`.
-Only one of these can be run through the pipeline at once, so let's take the `C4_5_Phase` as an example.
-A sensible name for the output folder might be `2024-06-14-Drug-C4_5_Phase`, which would make the pipeline command as below.
+Let's run the `C4_5_Phase` timelapse first.
 
-`./run.sh 11rMHhF8fWPutVpvdzdWZy2-14ompW8Wc 2024-06-14-Drug-C4_5_Phase C4_5_Phase`
+We need to prepare a config file describing what parameter values to use for segmentation, tracking, and CellPhe feature generation.
+This repository provides 2 examples in `configs`: `cyto3.json` and `iolight.json` that differ based on **which CellPose model is used**.
+As we are using Phase images it makes sense to try `cyto3` first.
+Make a new sub-directory in the new experiment folder and copy `cyto3.json` there.
+It should be renamed into the format `<site>_<channel>.json, so `C4_5_Phase.json`.
+For clarity, the path to this file is `bl-cellphe/Experiments/2024-06-14_Drug_LiveCyte/configs/C4_5_Phase.json`.
+
+Now edit this in a text editor, which again is probably easier on your local machine having mounted the network share.
+The values you **must** change are the `site` and `image_type` values in the `folder_names` object.
+These will determine the folder names that get populated with the pipeline outputs.
+Here change them to the values used earlier:
+
+```json
+    "site": "C4_5",
+    "image_type": "Phase",
+```
+
+You can also change other values here, such as choosing which parts of the pipeline to run (segmentation, tracking, or CellPhe. Note that to run tracking you must have run segmentation, and to run CellPhe tracking must have been run).
+You can also change the folder names for the segmentation and tracking sub-directories in `folder_names`, useful if you run the same timelapse through multiple segmentation or tracking parameters.
+And of course you can change the segmentation and tracking parameters themselves.
+
+Once you've finished modifying the config file, you're ready to run the pipeline.
+Remember that the first argument is the Google Drive ID, then the Experiment name, then a pattern matching the start of the image filenames we want, and then the path to the config file.
+
+**This is definitely very clunky, having to pass both the Experiment name and the config path and having to have the config file named a certain way. This will be streamlined later on**
+
+`./run.sh 11rMHhF8fWPutVpvdzdWZy2-14ompW8Wc 2024-06-14_Drug_LiveCyte C4_5_Phase ../Experiments/2024-06-14_Drug_LiveCyte/configs/C4_5_Phase.json`
 
 Running this command starts the pipeline, which should now run without any further input until completion.
 The first step it takes is to copy the specified images (and the companion.ome file if present) over to Viking, which can take several minutes depending on the dataset size.
@@ -171,29 +207,10 @@ executor >  local (724), slurm (721)
 ```
 
 Once the job has completed there will be a summary detailing how long the job took (note that this particular example took 13 minutes in real-time, but used 6 computer hours, how long it would have taken without parallelisation).
-The pipeline outputs are then transferred to `bioldata` where they can be seen in the `Datasets` folder.
+The pipeline outputs are then transferred to `bioldata` where they can be seen in the `Experiments` folder.
 
 The outputs are:
-
-  - `frame_features.csv`
-    - The 74 CellPhe features calculated on every frame for every cell
-    - Each row corresponds to a different cell (`CellID`) on a different frame (`FrameID`) where the ROI filename is given in `ROI_filename`. All the other columns are the features
-  - `time_series_features.csv`
-    - The 72 frame features (the 74 from before excluding `x` and `y` positions) summarised across each cell's time-series
-    - Each row corresponds to a different cell (`CellID`) with 1080 time-series summary features (72 features summarized with 15 different methods) plus an overall summary of the area covered `trajArea`
-  - `raw`
-    - The raw images
-  - `frames`
-    - If the dataset was OME.TIFF then this folder exists and contains the ome.tiffs split into a single tiff per frame
-    - Not present if the dataset wasn't OME.TIFF
-  - `masks`
-    - The CellPose segmentation masks
-  - `rois.zip`
-    - The ROIs - can be opened directly in ImageJ
-  - `trackmate_features.csv`
-    - The output from the TrackMate tracking
-  - `trackmate_features_filtered.csv`
-    - The output from the TrackMate tracking **after** filtering to cells that were tracked for the required number of observations (default 50)
+TODO UPDATE FOR NEW FOLDER STRUCTURE
 
 ```Shell
 executor >  local (724), slurm (1446)
@@ -229,11 +246,34 @@ Succeeded   : 2'170
 Transferred:        1.932 GiB / 1.932 GiB, 100%, 5.453 MiB/s, ETA 0s
 Transferred:         1480 / 1480, 100%
 Elapsed time:      4m27.2s
-
-sl561@research0:/shared/storage/bioldata/bl-cellphe/CellPhe-data-pipeline$ cd ../Datasets/2024-06-14-Drug-C4_5_Phase/
-sl561@research0:/shared/storage/bioldata/bl-cellphe/Datasets/2024-06-14-Drug-C4_5_Phase$ ls
-frame_features.csv  frames  masks  raw  rois.zip  time_series_features.csv  trackmate_features.csv
 ```
+
+## Resuming a previous run
+
+Often you'll want to rerun a previous pipeline run, either with different segmentation or tracking parameters.
+In this case if you add the `-resume` argument to the end of the same call to `run.sh`, NextFlow will automatically load the cached outputs that haven't changed.
+
+`./run.sh 11rMHhF8fWPutVpvdzdWZy2-14ompW8Wc 2024-06-14_Drug_LiveCyte C4_5_Phase ../Experiments/2024-06-14_Drug_LiveCyte/configs/C4_5_Phase.json -resume`
+
+For example, f you change the tracking configuration but keep the segmentation the same, NextFlow will use the cached raw image processing and segmentation masks and jump straight into the the tracking.
+Furthermore, the data won't need to be copied down from Google Drive again as it will be recognised as already being present.
+This behaviour is so useful that a valid question is "why isn't this the default behaviour?" Read on...
+
+## Running multiple pipelines
+
+There is nothing stopping you from opening multiple terminal windows and running the pipeline simultaneously both for different Experiments and different timelapses within the same Experiment.
+There are just 2 things to be aware of when doing this.
+Firstly that that your queueing time on Viking will increase the more things you have running at once.
+Secondly, that the `-resume` functionality described in the previous section **can only be used if the Experiment isn't already running a pipeline for a different timelapse**.
+
+In summary:
+
+  - Running multiple pipelines for different Experiments simultaneously: ✅
+  - Running multiple pipelines for different timelapses within the same Experiment simultaneously: ✅
+  - Running multiple pipelines for different Experiments while using `-resume` simultaneously: ✅
+  - Running multiple pipelines for different timelapses within the same Experiment while using `-resume` simultaneously: ❌
+
+Yes you'll likely use `-resume` a lot, just be aware that it can cause problems in set situations.
 
 ## Error messages
 
@@ -245,7 +285,6 @@ Not to worry, these jobs will be resubmitted to Viking but with additional resou
 ```Shell
 [40/e027a1] NOTE: Process `segment_image(20)` terminated with an error exit status (140) -- Execution is retried (1)
 ```
-
 
 ### Missing trackmate features
 
@@ -289,11 +328,6 @@ To exit a `tmux` session (rather than just leaving it running in the background)
 
 To be able to access the outputs on your personal computer, you can map the `bioldata` network drive following the instructions on the [University's documentation](https://support.york.ac.uk/s/article/Filestore-How-to-map-a-drive-Windows), using the path `\\storage.its.york.ac.uk\bioldata\bl-cellphe`.
 **NB: you'll need to either be wired onto the campus network or connected to the VPN to read the network drive**.
-
-## Settings
-
-The pipeline currently runs with the default options for segmentation and tracking, although later on we hope to make it possible to configure these.
-As such it might be sensible to suffix output folders with `_default` to indicate these outputs were generated using the default configuration, so later on pipelines experimenting with different parameters can be run and easily compared.
 
 ## QA/QC
 
