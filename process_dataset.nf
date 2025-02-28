@@ -427,7 +427,7 @@ workflow {
         segmentation_qc(
             file('/mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/segmentation_qc.qmd'),
             masks,
-            collect(allFiles)
+            allFiles.collect()
         )
 	if (params.run.tracking) {
 
