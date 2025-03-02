@@ -34,7 +34,7 @@ EXPERIMENT_PATH_RESEARCH0="/shared/storage/bioldata/bl-cellphe/Experiments/$EXPE
 CONFIG_PATH_VIKING="$EXPERIMENT_PATH_VIKING/configs/$BASENAME"
 SITE=$(../tools/jq -r .folder_names.site $CONFIG)
 IMAGE=$(../tools/jq -r .folder_names.image_type $CONFIG)
-RAW_DATA_DIR="$EXPERIMENT_PATH_VIKING/raw/$SITE_$IMAGE"
+RAW_DATA_DIR="$EXPERIMENT_PATH_VIKING/raw/${SITE}_${IMAGE}"
 
 ml load tools/rclone
 
