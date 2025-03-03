@@ -72,6 +72,8 @@ If this doesn't work, try again or ask for help in Slack.
 
 # Running the Pipeline
 
+There are several steps involved in running the pipeline, which will be discussed in turn:
+
   - Creating an Experiment folder (if needed)
   - Identifying the timelapse
   - Creating a config file for the run
@@ -81,14 +83,13 @@ If this doesn't work, try again or ask for help in Slack.
 ## Creating an Experiment folder
 
 Each run of the microscope is termed an 'Experiment', and all of its raw and processed data is stored together in a folder in the 'Experiments' sub-folder in the network share.
-First check that there isn't an experiment folder for the dataset you are about to process.
-Look in the [Experiment Log](https://docs.google.com/spreadsheets/d/1BZNBhHIMR8uBYqgkM81DA0BgXtR4CElyHNOgvvTQre0/edit?gid=0#gid=0) and see if the 'Processed with CellPhe Pipeline' columns for either Phase or Brightfield are ticked.
+First check that there isn't an experiment folder for the dataset you are about to process by looking in the [Experiment Log](https://docs.google.com/spreadsheets/d/1BZNBhHIMR8uBYqgkM81DA0BgXtR4CElyHNOgvvTQre0/edit?gid=0#gid=0) and see if the 'Processed with CellPhe Pipeline' columns for either Phase or Brightfield are ticked.
 If they are, then the 'Experiment Name' folder will give the folder name to use.
 If not, create a new sub-folder in Experiments with a name following the convention `<date>_<name>_<cell_line>_<microscope>`, e.g. `20240317_dose_response_mcf7_livecyte` and add this to the Experiment Name column in the spreadsheet.
 
 ## Identifying the timelapse
 
-While an Experiment comprises a single run of the microscope, this generates multiple different timelapses, i.e. the LiveCyte is run on different wells simultaneously and outputs both phase and brightfield images.
+An Experiment comprises a single run of the microscope, potentially generating multiple different timelapses, i.e. the LiveCyte is run on different wells simultaneously and outputs both phase and brightfield images.
 The pipeline is run for one timelapse at a time (although multiple timelapses can be run manually in parallel, more on that later).
 The next step then is to identify which timelapse this pipeline run will process.
 
@@ -113,10 +114,10 @@ The minimum number of frames is 50 by default, but for shorter time-series that 
 To create a config file, copy the template config file for your segmentation model from the `bl-cellphe/CellPhe-data-pipeline/templates` folder, either `cyto3.json` or `iolight.json`, into the `configs` subfolder of your Experiment folder (you'll need to create this if it doesn't exist already), and give it a sensible name corresponding to the specific timelapse.
 I.e. for the LiveCyte dataset mentioned before, the full path to the config file is `bl-cellphe/Experiments/20240614_dr_dox_m231/configs/C4_5_Phase.json`.
 
-Now edit JSON file in a text editor.
-The values you **must** change are the `site` and `image_type` values in the `folder_names` object.
-These will determine the folder names that get populated with the pipeline outputs.
-Here change them to the values used earlier:
+Now edit the JSON file in a text editor.
+The only values you **must** change are `site` and `image_type` under `folder_names`.
+These will determine the folder names for this timelapse that will be populated with the pipeline outputs.
+Here change them to the values identified earlier (NB: if you are using an ioLight which doesn't have multiple sites, just put 'all' for 'site').
 
 ```json
     "site": "C4_5",
@@ -138,7 +139,7 @@ Despite running on Viking, the pipeline is launched from `research0`.
 
 First, SSH into `research0` (`ssh <username>@research0` while connected to eduroam or the VPN).
 `research0` has the `bioldata` storage already mounted, you can access it by running `cd /shared/storage/bioldata/bl-cellphe` (`cd` stands for Change Directory).
-**NB: tab-completion saves a lot of time typing, i.e. after typing `cd /sh` if you press Tab it will autocomplete the rest of the word `shared`**
+**NB: tab-completion saves a lot of time typing, i.e. after typing `cd /sh` if you press Tab it will autocomplete the rest of the word `shared`**.
 
 You can see all the files and folders with `ls` (List Directory) which should show you the same as below:
 
@@ -287,7 +288,7 @@ In summary:
   - Running multiple pipelines for different Experiments while using `-resume` simultaneously: ✅
   - Running multiple pipelines for different timelapses within the same Experiment while using `-resume` simultaneously: ❌
 
-Yes you'll likely use `-resume` a lot, just be aware that it can cause problems in set situations.
+You'll likely use `-resume` a lot, just be aware that it can cause problems in set situations.
 
 ## Error messages
 
