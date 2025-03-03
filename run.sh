@@ -7,35 +7,47 @@
 # i.e. one well and one imaging modality.
 #
 # Args:
-#   - source: Google Drive folder ID
-#   - experiment: Experiment name for the output, should be in the format
+#   - 1: source: Google Drive folder ID
 #   YYYY-mm-dd_experiment-name_microscope_cellline
-#   - pattern: Any file matching pattern, i.e. "Brightfield-*.tiff"
-#   - config: Config file providing pipeline parameters
+#   - 2: pattern: Any file matching pattern, i.e. "Brightfield-*.tiff"
+#   - 3: config: Config file providing pipeline parameters. Must be saved in the configs sub-directory of an Experiment
+#   - 4: (OPTIONAL): -resume if intending to resume
 GDRIVE_ID=${1}
-EXPERIMENT=${2}
-PATTERN=${3}
-CONFIG=${4}
-RESUME=${5:-default}
+PATTERN=${2}
+CONFIG=${3}
+RESUME=${4:-default}
+
+# Validate the provided config file
+EXPERIMENT="$(basename $(dirname $(dirname ${CONFIG})))"
+CONFIG_DIR="$(basename $(dirname ${CONFIG}))"
+EXPERIMENT_DIR="$(basename $(dirname $(dirname $(dirname ${CONFIG}))))"
+BASENAME="$(basename ${CONFIG})"
+EXTENSION="${BASENAME##*.}"
+if [[ $CONFIG_DIR != "configs" || $EXPERIMENT_DIR != "Experiments" || $EXTENSION != "json" ]]; then
+    echo "Config must be a .json file residing in a 'configs' sub-directory of an Experiment."
+    exit 1
+fi
+
+# Prepare paths
+EXPERIMENT_PATH_VIKING="/mnt/scratch/projects/biol-imaging-2024/Experiments/$EXPERIMENT"
+EXPERIMENT_PATH_RESEARCH0="/shared/storage/bioldata/bl-cellphe/Experiments/$EXPERIMENT"
+CONFIG_PATH_VIKING="$EXPERIMENT_PATH_VIKING/configs/$BASENAME"
 SITE=$(../tools/jq -r .folder_names.site $CONFIG)
 IMAGE=$(../tools/jq -r .folder_names.image_type $CONFIG)
-# TODO should add hash or something to make this unique
-CONFIG_FN="config_${SITE}_${IMAGE}.json"
-EXPERIMENT_PATH="/mnt/scratch/projects/biol-imaging-2024/Experiments/$EXPERIMENT"
-CONFIG_PATH="$EXPERIMENT_PATH/configs/$CONFIG_FN"
+RAW_DATA_DIR="$EXPERIMENT_PATH_VIKING/raw/${SITE}_${IMAGE}"
 
 ml load tools/rclone
 
 # Step 1: Transfer data and config to Viking
 echo "Transferring data to Viking..."
-rclone --config .rclone.config copy -v --include "*$PATTERN*.companion.ome*" --include "*$PATTERN*.tif" --include "*$PATTERN*.tiff" --include "*$PATTERN*.TIF" --include "*$PATTERN*.TIFF" --include "*$PATTERN*.jpg" --include "*$PATTERN*.jpeg" --include "*$PATTERN*.JPG" --include "*$PATTERN*.JPEG" --drive-root-folder-id $GDRIVE_ID GDrive: Viking:$EXPERIMENT_PATH/raw/${SITE}_${IMAGE}
-rclone --config .rclone.config copyto -v $CONFIG Viking:$CONFIG_PATH
+rclone --config .rclone.config copy -v --include "*$PATTERN*.companion.ome*" --include "*$PATTERN*.tif" --include "*$PATTERN*.tiff" --include "*$PATTERN*.TIF" --include "*$PATTERN*.TIFF" --include "*$PATTERN*.jpg" --include "*$PATTERN*.jpeg" --include "*$PATTERN*.JPG" --include "*$PATTERN*.JPEG" --drive-root-folder-id $GDRIVE_ID GDrive: Viking:$RAW_DATA_DIR
+rclone --config .rclone.config copyto -v $CONFIG Viking:$CONFIG_PATH_VIKING
 
 # Step 2: Submit the job to process the data (waits until complete)
 echo "Executing pipeline..."
-NEXTFLOW_CMD="cd /mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline && ./process_dataset.sh $EXPERIMENT $CONFIG_PATH $RESUME"
+NEXTFLOW_CMD="cd /mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline && ./process_dataset.sh $CONFIG_PATH_VIKING $RESUME"
 ssh viking "${NEXTFLOW_CMD}"
 
 # Step 3: Transfer outputs to network share
 echo "Transferring outputs to bioldata..."
-rclone --config .rclone.config copy --no-update-modtime --exclude ".work/**" --exclude ".nextflow**" -v Viking:$EXPERIMENT_PATH /shared/storage/bioldata/bl-cellphe/Experiments/$EXPERIMENT
+rclone --config .rclone.config copy --no-update-modtime --exclude ".work/**" --exclude ".nextflow**" -v Viking:$EXPERIMENT_PATH_VIKING $EXPERIMENT_PATH_RESEARCH0
