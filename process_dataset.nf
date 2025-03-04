@@ -314,7 +314,7 @@ process rename_frames {
     raw_fns = "${in_files}".split(" ")
     for i, raw_fn in enumerate(sorted(raw_fns)):
         new_fn = f"frame_{i+1:05}.tiff"
-        shutil.copy2(raw_fn, new_fn)
+        shutil.move(raw_fn, new_fn)
     """
 }
 
