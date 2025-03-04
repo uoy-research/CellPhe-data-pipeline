@@ -292,6 +292,21 @@ process split_ome_frames {
     """
 }
 
+process remove_spaces {
+  label 'local'
+
+  input:
+  path in_file
+
+  output:
+  file('*.{tif,tiff,TIF,TIFF}')
+
+  script:
+  """
+  rename ' ' '_' ${in_file}
+  """
+}
+
 process rename_frames {
     label 'slurm'
     label 'slurm_retry'
@@ -401,25 +416,30 @@ workflow {
             | merge(xml2)
             | merge(xml3)
             | split_ome_frames
-        frameFiles = separate.collect()
+        frameFiles = separate
     } else if (!jpegs.isEmpty()) {
         // JPEGs need converting to TIFF
-        frameFiles = convert_jpeg(channel.fromList(jpegs)).collect()
+        frameFiles = convert_jpeg(channel.fromList(jpegs))
     } else if (tiffs.size() == 1) {
         // TIFF stack that needs splitting into 1 tiff per frame
-        frameFiles = split_stacked_tiff(tiffs[0])
+        frameFiles = split_stacked_tiff(tiffs[0]).flatten()
     } else if (tiffs.size() > 1) {
-        frameFiles = channel.fromList(tiffs).collect()
+        frameFiles = channel.fromList(tiffs)
     } else {
         // Fallback, shouldn't get here
         println "No image files found!"
         frameFiles = channel.empty()
     }
 
-    // Rename all frames to standard frame_<frameid>.<ext>
-    allFiles = rename_frames(frameFiles).flatten()
+    // Remove spaces as that messes up collecting
+    // Then rename images to standard frame_XXXX.tiff format
+    allFiles = frameFiles
+      | remove_spaces
+      | collect
+      | rename_frames
+      | flatten
 
-   if (params.run.segmentation) {
+    if (params.run.segmentation) {
 
         // Segment all images and track
         masks = segment_image(allFiles)
