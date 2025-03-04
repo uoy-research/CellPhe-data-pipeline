@@ -322,12 +322,11 @@ process rename_frames {
     """
     #!/usr/bin/env python
 
-    import os
     import shutil
-    import pathlib
+    from natsort import natsorted
 
     raw_fns = "${in_files}".split(" ")
-    for i, raw_fn in enumerate(sorted(raw_fns)):
+    for i, raw_fn in enumerate(natsorted(raw_fns)):
         new_fn = f"frame_{i+1:05}.tiff"
         shutil.move(raw_fn, new_fn)
     """
