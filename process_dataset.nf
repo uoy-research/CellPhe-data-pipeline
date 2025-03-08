@@ -432,8 +432,16 @@ workflow {
 
     // Remove spaces as that messes up collecting
     // Then rename images to standard frame_XXXX.tiff format
-    allFiles = frameFiles
+    frameFiles
+        .branch { f ->
+            has_space: f.getBaseName().contains(" ")
+            no_space: true
+        }
+        .set { filesBranched }
+
+    allFiles = filesBranched.has_space
       | remove_spaces
+      | concat(filesBranched.no_space)
       | collect
       | rename_frames
       | flatten
@@ -448,7 +456,7 @@ workflow {
             masks,
             allFiles.collect()
         )
-	if (params.run.tracking) {
+        if (params.run.tracking) {
 
             track_images(masks)
               | parse_trackmate_xml
