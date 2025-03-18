@@ -338,8 +338,8 @@ process split_stacked_tiff {
 
 process create_tiff_stack {
     label 'slurm'
-    time 10.minute
-    memory 8.GB
+    time 30.minute
+    memory 16.GB
     publishDir "${processed_dir}", mode: 'copy'
     errorStrategy 'ignore'
 
