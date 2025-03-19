@@ -38,6 +38,39 @@ process segment_image {
     """
 }
 
+process save_segmentation_config {
+    label 'local'
+    publishDir "${seg_dir}/config", mode: 'copy'
+
+    input:
+    val config
+
+    output:
+    path "*.json"
+
+    script:
+    """
+    jq <<< '${config}' > "${timelapse_id}.json"
+    """
+}
+
+process save_tracking_config {
+    label 'local'
+    publishDir "${track_dir}/config", mode: 'copy'
+
+    input:
+    val config
+
+    output:
+    path "*.json"
+
+    script:
+    """
+    jq <<< '${config}' > "${timelapse_id}.json"
+    """
+}
+
+
 process segmentation_qc {
     label 'slurm'
     label 'slurm_retry'
@@ -421,6 +454,9 @@ workflow {
 
    if (params.run.segmentation) {
 
+        // Save config
+	save_segmentation_config(JsonOutput.toJson(['segmentation': params.segmentation]))
+
         // Segment all images and track
         masks = segment_image(allFiles)
           | collect
@@ -430,6 +466,9 @@ workflow {
             allFiles.collect()
         )
 	if (params.run.tracking) {
+
+	    // Save config
+	    save_tracking_config(JsonOutput.toJson(['tracking': params.tracking, 'QC': params.QC]))
 
             track_images(masks)
               | parse_trackmate_xml
