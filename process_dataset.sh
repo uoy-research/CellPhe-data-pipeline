@@ -27,8 +27,13 @@ source $PROJECT_DIR/venv/bin/activate
 export CELLPOSE_LOCAL_MODELS_PATH=$PROJECT_DIR/cellpose
 export PATH=$PATH:$PROJECT_DIR/bin/apache-maven-3.9.9/bin
 
-# Run pipeline
-cd $EXPERIMENT_DIR
+# Run pipeline from a directory specific to this timelapse
+SITE=$(jq -r .folder_names.site $CONFIG)
+IMAGE=$(jq -r .folder_names.image_type $CONFIG)
+TIMELAPSE=$SITE_$IMAGE
+LAUNCH_DIR=$EXPERIMENT_DIR/.launch/$TIMELAPSE
+mkdir -p $LAUNCH_DIR
+cd $LAUNCH_DIR
 CMD="srun --ntasks=1 --cpus-per-task 4 --mem=8G --time=120 nextflow run $NEXTFLOW_FILE -work-dir .work -params-file $CONFIG -ansi-log true"
 if [ $RESUME == '-resume' ]
 then

@@ -50,4 +50,4 @@ ssh viking "${NEXTFLOW_CMD}"
 
 # Step 3: Transfer outputs to network share
 echo "Transferring outputs to bioldata..."
-rclone --config .rclone.config copy --no-update-modtime --exclude ".work/**" --exclude ".nextflow**" -v Viking:$EXPERIMENT_PATH_VIKING $EXPERIMENT_PATH_RESEARCH0
+rclone --config .rclone.config copy --no-update-modtime --exclude ".work/**" --exclude ".nextflow**" --exclude ".launch/**" -v Viking:$EXPERIMENT_PATH_VIKING $EXPERIMENT_PATH_RESEARCH0
