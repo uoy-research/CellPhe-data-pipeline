@@ -30,8 +30,9 @@ export PATH=$PATH:$PROJECT_DIR/bin/apache-maven-3.9.9/bin
 # Run pipeline from a directory specific to this timelapse
 SITE=$(jq -r .folder_names.site $CONFIG)
 IMAGE=$(jq -r .folder_names.image_type $CONFIG)
-TIMELAPSE=$SITE_$IMAGE
-LAUNCH_DIR=$EXPERIMENT_DIR/.launch/$TIMELAPSE
+SEG=$(jq -r .folder_names.segmentation $CONFIG)
+TRACK=$(jq -r .folder_names.tracking $CONFIG)
+LAUNCH_DIR="$EXPERIMENT_DIR/.launch/${SITE}_${IMAGE}_${SEG}_${TRACK}"
 mkdir -p $LAUNCH_DIR
 cd $LAUNCH_DIR
 CMD="srun --ntasks=1 --cpus-per-task 4 --mem=8G --time=120 nextflow run $NEXTFLOW_FILE -work-dir .work -params-file $CONFIG -ansi-log true"
