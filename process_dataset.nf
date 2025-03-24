@@ -8,9 +8,9 @@ params.run = ''
 
 // Folder paths
 timelapse_id = "${params.folder_names.site}_${params.folder_names.image_type}"
-raw_dir = "raw/${timelapse_id}"
-processed_dir = "processed/${timelapse_id}"
-seg_dir = "analysis/segmentation/${params.folder_names.segmentation}"
+raw_dir = "../../raw/${timelapse_id}"
+processed_dir = "../../processed/${timelapse_id}"
+seg_dir = "../../analysis/segmentation/${params.folder_names.segmentation}"
 mask_dir = "${seg_dir}/masks/${timelapse_id}"
 track_dir = "${seg_dir}/tracking/${params.folder_names.tracking}"
 trackmate_dir = "${track_dir}/trackmate"

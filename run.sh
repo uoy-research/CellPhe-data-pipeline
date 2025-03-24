@@ -40,7 +40,7 @@ ml load tools/rclone
 
 # Step 1: Transfer data and config to Viking
 echo "Transferring data to Viking..."
-rclone --config .rclone.config copy -v --include "*$PATTERN*.companion.ome*" --include "*$PATTERN*.tif" --include "*$PATTERN*.tiff" --include "*$PATTERN*.TIF" --include "*$PATTERN*.TIFF" --include "*$PATTERN*.jpg" --include "*$PATTERN*.jpeg" --include "*$PATTERN*.JPG" --include "*$PATTERN*.JPEG" --drive-root-folder-id $GDRIVE_ID GDrive: Viking:$RAW_DATA_DIR
+rclone --config .rclone.config copy --stats-log-level NOTICE --include "*$PATTERN*.companion.ome*" --include "*$PATTERN*.tif" --include "*$PATTERN*.tiff" --include "*$PATTERN*.TIF" --include "*$PATTERN*.TIFF" --include "*$PATTERN*.jpg" --include "*$PATTERN*.jpeg" --include "*$PATTERN*.JPG" --include "*$PATTERN*.JPEG" --drive-root-folder-id $GDRIVE_ID GDrive: Viking:$RAW_DATA_DIR
 rclone --config .rclone.config copyto -v $CONFIG Viking:$CONFIG_PATH_VIKING
 
 # Step 2: Submit the job to process the data (waits until complete)
@@ -50,4 +50,4 @@ ssh viking "${NEXTFLOW_CMD}"
 
 # Step 3: Transfer outputs to network share
 echo "Transferring outputs to bioldata..."
-rclone --config .rclone.config copy --no-update-modtime --exclude ".work/**" --exclude ".nextflow**" -v Viking:$EXPERIMENT_PATH_VIKING $EXPERIMENT_PATH_RESEARCH0
+rclone --config .rclone.config copy --stats-log-level NOTICE --no-update-modtime --exclude ".work/**" --exclude ".nextflow**" --exclude ".launch/**" Viking:$EXPERIMENT_PATH_VIKING $EXPERIMENT_PATH_RESEARCH0
