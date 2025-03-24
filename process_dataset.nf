@@ -325,6 +325,21 @@ process split_ome_frames {
     """
 }
 
+process remove_spaces {
+  label 'local'
+
+  input:
+  path in_file
+
+  output:
+  file('*.{tif,tiff,TIF,TIFF}')
+
+  script:
+  """
+  rename ' ' '_' ${in_file}
+  """
+}
+
 process rename_frames {
     label 'slurm'
     label 'slurm_retry'
@@ -340,12 +355,11 @@ process rename_frames {
     """
     #!/usr/bin/env python
 
-    import os
     import shutil
-    import pathlib
+    from natsort import natsorted
 
     raw_fns = "${in_files}".split(" ")
-    for i, raw_fn in enumerate(sorted(raw_fns)):
+    for i, raw_fn in enumerate(natsorted(raw_fns)):
         new_fn = f"frame_{i+1:05}.tiff"
         shutil.move(raw_fn, new_fn)
     """
@@ -434,25 +448,38 @@ workflow {
             | merge(xml2)
             | merge(xml3)
             | split_ome_frames
-        frameFiles = separate.collect()
+        frameFiles = separate
     } else if (!jpegs.isEmpty()) {
         // JPEGs need converting to TIFF
-        frameFiles = convert_jpeg(channel.fromList(jpegs)).collect()
+        frameFiles = convert_jpeg(channel.fromList(jpegs))
     } else if (tiffs.size() == 1) {
         // TIFF stack that needs splitting into 1 tiff per frame
-        frameFiles = split_stacked_tiff(tiffs[0])
+        frameFiles = split_stacked_tiff(tiffs[0]).flatten()
     } else if (tiffs.size() > 1) {
-        frameFiles = channel.fromList(tiffs).collect()
+        frameFiles = channel.fromList(tiffs)
     } else {
         // Fallback, shouldn't get here
         println "No image files found!"
         frameFiles = channel.empty()
     }
 
-    // Rename all frames to standard frame_<frameid>.<ext>
-    allFiles = rename_frames(frameFiles).flatten()
+    // Remove spaces as that messes up collecting
+    // Then rename images to standard frame_XXXX.tiff format
+    frameFiles
+        .branch { f ->
+            has_space: f.getBaseName().contains(" ")
+            no_space: true
+        }
+        .set { filesBranched }
 
-   if (params.run.segmentation) {
+    allFiles = filesBranched.has_space
+      | remove_spaces
+      | concat(filesBranched.no_space)
+      | collect
+      | rename_frames
+      | flatten
+
+    if (params.run.segmentation) {
 
         // Save config
 	save_segmentation_config(JsonOutput.toJson(['segmentation': params.segmentation]))
@@ -465,7 +492,7 @@ workflow {
             masks,
             allFiles.collect()
         )
-	if (params.run.tracking) {
+        if (params.run.tracking) {
 
 	    // Save config
 	    save_tracking_config(JsonOutput.toJson(['tracking': params.tracking, 'QC': params.QC]))
