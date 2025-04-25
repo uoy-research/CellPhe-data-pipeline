@@ -2,7 +2,7 @@
   "folder_names": {
     "site": "",
     "image_type": "",
-    "segmentation": "iolight",
+    "segmentation": "iolight_20250203",
     "tracking": "LAP_default"
   },
   "run": {
@@ -12,7 +12,7 @@
   },
   "segmentation": {
     "model": {
-      "pretrained_model": "/mnt/scratch/projects/biol-imaging-2024/cellpose/CP_20241218_ioLight"
+      "pretrained_model": "/mnt/scratch/projects/biol-imaging-2024/cellpose/CP_20250203_122157"
     },
     "eval": {
       "channels": [0,0]
