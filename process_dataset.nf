@@ -147,8 +147,8 @@ process parse_trackmate_xml {
     path xml_file
 
     output:
-    path "rois.zip", emit: rois
-    path "trackmate_features.csv", emit: features
+    path "rois.zip", emit: rois, optional: true
+    path "trackmate_features.csv", emit: features, optional: true
 
     script:
     """
@@ -167,7 +167,7 @@ process filter_size_and_observations {
     path features_original
 
     output:
-    path("trackmate_features_filtered.csv", arity: '1')
+    path("trackmate_features_filtered.csv", arity: '1'), optional: true
 
     """
     #!/usr/bin/env Rscript
@@ -256,7 +256,7 @@ process cellphe_time_series_features {
     path(frame_features) 
 
     output:
-    path "time_series_features.csv"
+    path "time_series_features.csv", optional: true
  
     script:
     """
