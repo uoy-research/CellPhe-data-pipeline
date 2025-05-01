@@ -167,7 +167,7 @@ process filter_size_and_observations {
     path features_original
 
     output:
-    path("trackmate_features_filtered.csv", arity: '1'), optional: true
+    path "trackmate_features_filtered.csv", arity: '1', optional: true
 
     """
     #!/usr/bin/env Rscript
