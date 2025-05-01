@@ -282,30 +282,6 @@ Not to worry, these jobs will be resubmitted to Viking but with additional resou
 [40/e027a1] NOTE: Process `segment_image(20)` terminated with an error exit status (140) -- Execution is retried (1)
 ```
 
-### Missing trackmate features
-
-Another error you might encounter is an error in `executing process > 'filter_minimum_observations'` due to a missing file `trackmate_features_filtered.csv`.
-This means that there weren't any cells that are tracked for the minimum number of observations (50 by default).
-This error will terminate the entire pipeline as features can't be extracted for 0 cells!
-If you encounter this, try again with different segmentation and/or tracking parameters.
-
-```Shell
-executor >  local (1), slurm (475)
-[16/62c797] process > rename_frames                 [100%] 1 of 1 ✔
-[d7/d4b5d4] process > segment_image (105)           [100%] 473 of 473, failed...
-[57/a70edd] process > track_images                  [100%] 1 of 1 ✔
-[03/75566b] process > filter_minimum_observations   [100%] 1 of 1, failed: 1 ✘
-[-        ] process > cellphe_frame_features_image  -
-[-        ] process > combine_frame_features        -
-[-        ] process > create_frame_summary_features -
-[-        ] process > cellphe_time_series_features  -
-Execution cancelled -- Finishing pending tasks before exit
-ERROR ~ Error executing process > 'filter_minimum_observations'
-
-Caused by:
-  Missing output file(s) `trackmate_features_filtered.csv` expected by process `filter_minimum_observations`
-```
-
 # Tips
 
 ## Tmux
