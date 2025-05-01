@@ -11,11 +11,9 @@
 #   YYYY-mm-dd_experiment-name_microscope_cellline
 #   - 2: pattern: Any file matching pattern, i.e. "Brightfield-*.tiff"
 #   - 3: config: Config file providing pipeline parameters. Must be saved in the configs sub-directory of an Experiment
-#   - 4: (OPTIONAL): -resume if intending to resume
 GDRIVE_ID=${1}
 PATTERN=${2}
 CONFIG=${3}
-RESUME=${4:-default}
 
 # Validate the provided config file
 EXPERIMENT="$(basename $(dirname $(dirname ${CONFIG})))"
@@ -45,7 +43,7 @@ rclone --config .rclone.config copyto -v $CONFIG Viking:$CONFIG_PATH_VIKING
 
 # Step 2: Submit the job to process the data (waits until complete)
 echo "Executing pipeline..."
-NEXTFLOW_CMD="cd /mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline && ./process_dataset.sh $CONFIG_PATH_VIKING $RESUME"
+NEXTFLOW_CMD="cd /mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline && ./process_dataset.sh $CONFIG_PATH_VIKING -resume"
 ssh viking "${NEXTFLOW_CMD}"
 
 # Step 3: Transfer outputs to network share

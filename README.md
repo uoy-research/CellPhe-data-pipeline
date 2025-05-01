@@ -265,30 +265,11 @@ Elapsed time:      4m27.2s
 
 ## Resuming a previous run
 
-Often you'll want to rerun a previous pipeline run, either with different segmentation or tracking parameters.
-In this case if you add the `-resume` argument to the end of the same call to `run.sh`, NextFlow will automatically load the cached outputs that haven't changed.
-
-`./run.sh 11rMHhF8fWPutVpvdzdWZy2-14ompW8Wc C4_5_Phase ../Experiments/20240614_dr_dox_m231/configs/C4_5_Phase.json -resume`
-
-For example, f you change the tracking configuration but keep the segmentation the same, NextFlow will use the cached raw image processing and segmentation masks and jump straight into the the tracking.
+Nextflow caches the outputs of previous runs, so that subsequent pipelines that use e.g. the same segmentation masks but different tracking algorithms, won't have to rerun the segmentation.
 Furthermore, the data won't need to be copied down from Google Drive again as it will be recognised as already being present.
-This behaviour is so useful that a valid question is "why isn't this the default behaviour?" Read on...
 
-## Running multiple pipelines
-
-There is nothing stopping you from opening multiple terminal windows and running the pipeline simultaneously both for different Experiments and different timelapses within the same Experiment, indeed this will often be necessary.
-There are just 2 things to be aware of when doing this.
-Firstly that that your queueing time on Viking will increase the more things you have running at once.
-Secondly, that the `-resume` functionality described in the previous section **can only be used if the Experiment isn't already running a pipeline for a different timelapse**.
-
-In summary:
-
-  - Running multiple pipelines for different Experiments simultaneously: ✅
-  - Running multiple pipelines for different timelapses within the same Experiment simultaneously: ✅
-  - Running multiple pipelines for different Experiments while using `-resume` simultaneously: ✅
-  - Running multiple pipelines for different timelapses within the same Experiment while using `-resume` simultaneously: ❌
-
-You'll likely use `-resume` a lot, just be aware that it can cause problems in set situations.
+However, the only downside to this is that you **cannot run multiple pipelines simultaneously for the same timelapse**.
+So if you want to run 2 different tracking algorithms on the same raw images, you'll need to run the in series.
 
 ## Error messages
 
@@ -299,30 +280,6 @@ Not to worry, these jobs will be resubmitted to Viking but with additional resou
 
 ```Shell
 [40/e027a1] NOTE: Process `segment_image(20)` terminated with an error exit status (140) -- Execution is retried (1)
-```
-
-### Missing trackmate features
-
-Another error you might encounter is an error in `executing process > 'filter_minimum_observations'` due to a missing file `trackmate_features_filtered.csv`.
-This means that there weren't any cells that are tracked for the minimum number of observations (50 by default).
-This error will terminate the entire pipeline as features can't be extracted for 0 cells!
-If you encounter this, try again with different segmentation and/or tracking parameters.
-
-```Shell
-executor >  local (1), slurm (475)
-[16/62c797] process > rename_frames                 [100%] 1 of 1 ✔
-[d7/d4b5d4] process > segment_image (105)           [100%] 473 of 473, failed...
-[57/a70edd] process > track_images                  [100%] 1 of 1 ✔
-[03/75566b] process > filter_minimum_observations   [100%] 1 of 1, failed: 1 ✘
-[-        ] process > cellphe_frame_features_image  -
-[-        ] process > combine_frame_features        -
-[-        ] process > create_frame_summary_features -
-[-        ] process > cellphe_time_series_features  -
-Execution cancelled -- Finishing pending tasks before exit
-ERROR ~ Error executing process > 'filter_minimum_observations'
-
-Caused by:
-  Missing output file(s) `trackmate_features_filtered.csv` expected by process `filter_minimum_observations`
 ```
 
 # Tips
