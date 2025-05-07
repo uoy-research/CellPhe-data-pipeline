@@ -28,11 +28,6 @@ SOURCE=${@:$OPTIND:1}
 PATTERN=${@:$OPTIND+1:1}
 CONFIG=${@:$OPTIND+2:1}
 
-echo "Source = $SOURCE"
-echo "Pattern = $PATTERN"
-echo "Config = $CONFIG"
-echo "bioldata = $bioldata"
-
 # Validate the provided config file
 EXPERIMENT="$(basename $(dirname $(dirname ${CONFIG})))"
 CONFIG_DIR="$(basename $(dirname ${CONFIG}))"
