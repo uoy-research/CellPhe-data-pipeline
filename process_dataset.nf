@@ -336,7 +336,8 @@ process remove_spaces {
 
   script:
   """
-  rename ' ' '_' ${in_file}
+  out_file=\$(echo ${in_file} | sed 's/ /_/g')
+  mv $in_file \$out_file
   """
 }
 
