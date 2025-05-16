@@ -9,7 +9,7 @@ params.run = ''
 // Folder paths
 timelapse_id = "${params.folder_names.site}_${params.folder_names.image_type}"
 raw_dir = "../../raw/${timelapse_id}"
-processed_dir = "../../processed/${timelapse_id}"
+processed_dir = "../../processed"
 seg_dir = "../../analysis/segmentation/${params.folder_names.segmentation}"
 mask_dir = "${seg_dir}/masks/${timelapse_id}"
 track_dir = "${seg_dir}/tracking/${params.folder_names.tracking}"
@@ -387,19 +387,19 @@ process split_stacked_tiff {
 process create_tiff_stack {
     label 'slurm'
     time 30.minute
-    memory 16.GB
-    publishDir "${processed_dir}", mode: 'copy'
+    memory 8.GB
+    publishDir "${processed_dir}", mode: 'move'
     errorStrategy 'ignore'
 
     input:
     path(frames) 
 
     output:
-    path "frames_stacked.tiff"
+    path "${timelapse_id}.zip"
 
     script:
     """
-    tiffcp ${frames} frames_stacked.tiff
+    zip "${timelapse_id}.zip" ${frames}
     """
 }
 
