@@ -8,6 +8,7 @@ import re
 import os
 import numpy as np
 import pandas as pd
+from PIL import Image
 
 parser = argparse.ArgumentParser(
                     description='Tracks a given image'
@@ -17,11 +18,13 @@ parser.add_argument('image_file', help="Input frame filepath")
 parser.add_argument('roi_file', help="Input ROIs archive")
 args = parser.parse_args()
 
-df = import_data(args.trackmate_file, "Trackmate_auto")
-
-# Load frame
-image = read_tiff(args.image_file)
-image = normalise_image(image, 0, 255)
+def load_image(path):
+    image = Image.open(path)
+    if (image.mode == 'RGB'):
+        image = image.convert('L')
+    image = np.array(image)
+    image = (image - image.min()) / (image.max() - image.min())
+    return image.astype("float32")
 
 def get_index(fn):
     res = re.search(r"frame_([0-9]+)\.[jpg|jpeg|tif|tiff|JPG|JPEG|TIF|TIFF]", fn)
@@ -29,6 +32,12 @@ def get_index(fn):
         return None
     else:
         return int(res.group(1))
+
+# Parse trackmate file
+df = import_data(args.trackmate_file, "Trackmate_auto")
+
+# Load frame and normalize to 0-1
+image = load_image(args.image_file)
 
 # Get FrameID from filename
 frame_id = get_index(args.image_file)
