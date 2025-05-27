@@ -1,0 +1,46 @@
+{
+  "folder_names": {
+    "site": "",
+    "image_type": "",
+    "segmentation": "livecyte_bf_20250502",
+    "tracking": "LAP_default"
+  },
+  "run": {
+    "segmentation": true,
+    "tracking": true,
+    "cellphe": true
+  },
+  "segmentation": {
+    "model": {
+      "pretrained_model": "/mnt/scratch/projects/biol-imaging-2024/cellpose/CP_20250502_Livcyto_25imgs"
+    },
+    "eval": {
+      "channels": [0,0]
+    }
+  },
+  "tracking": {
+    "algorithm": "SparseLAP",
+    "settings": {
+      "LINKING_MAX_DISTANCE": 70.0,
+      "LINKING_FEATURE_PENALTIES": {},
+      "ALLOW_GAP_CLOSING": true,
+      "MAX_FRAME_GAP": 4,
+      "GAP_CLOSING_MAX_DISTANCE": 90.0,
+      "GAP_CLOSING_FEATURE_PENALTIES": {},
+      "ALLOW_TRACK_MERGING": true,
+      "MERGING_MAX_DISTANCE": 50.0,
+      "MERGING_FEATURE_PENALTIES": {
+        "AREA": 0.5
+      },
+      "ALLOW_TRACK_SPLITTING": true,
+      "SPLITTING_MAX_DISTANCE": 5.0,
+      "SPLITTING_FEATURE_PENALTIES": {},
+      "ALTERNATIVE_LINKING_COST_FACTOR": 1.05,
+      "CUTOFF_PERCENTILE": 0.9
+    }
+  },
+  "QC": {
+    "minimum_observations": 50,
+    "minimum_cell_size": 50
+  }
+}
