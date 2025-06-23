@@ -70,6 +70,25 @@ df_hist |>
         labs(x="Number of cells in track", y="Number of tracks")
 ```
 
+@fig-cell-positions shows the positions of the tracked and filtered cells over the duration of the timelapse.
+
+```{r fig-cell-positions, fig.cap="Cell positions throughout the timelapse."}
+df_filtered |>
+    select(FRAME, TRACK_ID, POSITION_X, POSITION_Y) |>
+    group_by(FRAME, TRACK_ID) |>
+    filter(n() == 1) |>
+    ungroup() |>
+    arrange(FRAME) |>
+    ggplot(aes(x=POSITION_X, y=POSITION_Y, group=TRACK_ID, colour=FRAME)) +
+	geom_line() +
+	scale_colour_viridis_c("Frame") +
+	labs(x="X (pixels)", y="Y (pixels)") +
+	theme_bw() +
+	theme(
+            legend.position="bottom"
+        )
+```
+
 @fig-frame-to-frame shows the distribution of the frame-to-frame distance covered by each cell.
 
 ```{r fig-frame-to-frame, fig.cap="Histogram of the frame-to-frame distance covered by the cells in the filtered data."}
