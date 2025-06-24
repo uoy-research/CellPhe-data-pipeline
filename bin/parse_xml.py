@@ -71,6 +71,22 @@ track_records = []
 track_id = 0
 traversed_nodes = set()
 def traverse_track(node, accum=False):
+    """
+    Recursive function to traverse a graph representing tracks between
+    cells in a timelapse.
+    A global counter keeps track of the current track id, and is incremented
+    whenever a split event is reached (defined as a parent having more than
+    1 child).
+
+    Args:
+        - node (Node): The current node being visited.
+        - accum (bool): Whether to accumulate the track_id counter in case a
+          split event is reached.
+
+    Returns:
+        None. Populates a global variable `track_records` with visited nodes
+        and their newly assigned track_id instead.
+    """
     global track_id
 
     # Prevent multiple tracks on a merge
@@ -86,7 +102,8 @@ def traverse_track(node, accum=False):
     for j, child in enumerate(node.children):
         traverse_track(nodes[child], j > 0)
 
-# Traverse graph starting from from all root nodes
+# Traverse graph starting from from all root nodes, each of which will
+# accumulate the track counter.
 for i, root in enumerate(root_nodes):
     traverse_track(root, i > 0)
 
