@@ -69,13 +69,22 @@ root_nodes.sort(key = lambda x: x.frame)
 # Iterate through graph, creating unique track ids
 track_records = []
 track_id = 0
+traversed_nodes = set()
 def traverse_track(node, accum=False):
     global track_id
+
+    # Prevent multiple tracks on a merge
+    if node.id in traversed_nodes:
+        return
+
+    # Assign different track_ids after a split
     if accum:
         track_id += 1
+
     track_records.append({'ID': node.id, 'TRACK_ID': track_id})
-    for i, child in enumerate(node.children):
-        traverse_track(nodes[child], i > 0)
+    traversed_nodes.add(node.id)
+    for j, child in enumerate(node.children):
+        traverse_track(nodes[child], j > 0)
 
 # Traverse graph starting from from all root nodes
 for i, root in enumerate(root_nodes):
