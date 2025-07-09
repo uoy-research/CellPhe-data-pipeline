@@ -50,15 +50,18 @@ RAW_DATA_DIR="$EXPERIMENT_PATH_VIKING/raw/${SITE}_${IMAGE}"
 ml load tools/rclone
 
 # Step 1: Transfer data and config to Viking
-OUTBOUND_CMD="rclone --config .rclone.config copy --stats-log-level NOTICE --include \"*$PATTERN*.companion.ome*\" --include \"*$PATTERN*.tif\" --include \"*$PATTERN*.tiff\" --include \"*$PATTERN*.TIF\" --include \"*$PATTERN*.TIFF\" --include \"*$PATTERN*.jpg\" --include \"*$PATTERN*.jpeg\" --include \"*$PATTERN*.JPG\" --include \"*$PATTERN*.JPEG\""
+OUTBOUND_CMD="rclone --config .rclone.config copy --stats-log-level NOTICE"
 
-# Add source folder
+# Add source folder and including patterns. NB: Bioldata sources *only* contain the timelapse images so we don't need to provide a pattern
 if [[ $bioldata = true ]]
 then
-    OUTBOUND_CMD="$OUTBOUND_CMD \"$SOURCE\""
+    INCLUDES=""
+    SOURCE_CMD="\"$SOURCE\""
 else
-    OUTBOUND_CMD="$OUTBOUND_CMD --drive-root-folder-id $SOURCE GDrive:"
+    INCLUDES="--include \"*$PATTERN*.companion.ome*\" --include \"*$PATTERN*.tif\" --include \"*$PATTERN*.tiff\" --include \"*$PATTERN*.TIF\" --include \"*$PATTERN*.TIFF\" --include \"*$PATTERN*.jpg\" --include \"*$PATTERN*.jpeg\" --include \"*$PATTERN*.JPG\" --include \"*$PATTERN*.JPEG\""
+    SOURCE_CMD="--drive-root-folder-id $SOURCE GDrive:"
 fi
+OUTBOUND_CMD="$OUTBOUND_CMD $INCLUDES $SOURCE_CMD"
 
 # Destination is always the same
 OUTBOUND_CMD="$OUTBOUND_CMD Viking:$RAW_DATA_DIR"
