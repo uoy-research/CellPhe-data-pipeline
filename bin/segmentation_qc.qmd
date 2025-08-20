@@ -29,6 +29,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import matplotlib.patheffects as pe
+from skimage.segmentation import find_boundaries
 import os
 import math
 from PIL import Image
@@ -51,29 +52,6 @@ def get_image(fn):
 
 masks = [get_image(fn) for fn in mask_fns_plot]
 images = [get_image(fn) for fn in image_fns_plot]
-```
-
-```{python plot_funcs}
-# Create plots
-def create_cmap(img, page_size=20, palette="Pastel1"):
-    n_groups = np.unique(img).size
-    
-    viridis = plt.get_cmap(palette, page_size)
-    newcolors = np.zeros((n_groups, 4))
-    # Pagination
-    n_remaining = n_groups
-    start = 0
-    while n_remaining > 0:
-        n_page = min(n_remaining, page_size)
-        newcolors[start:(start+n_page), ] = viridis.colors[:n_page]
-        n_remaining -= n_page
-        start += n_page
-        
-    # Shuffle
-    rng = np.random.default_rng()
-    rng.shuffle(newcolors)
-    newcolors[0, ] = np.array([1, 1, 1, 0.1])
-    return ListedColormap(newcolors)
 ```
 
 @fig-segmentation shows a stitched plot of the identified segmentation masks from every 10th frame.
@@ -112,11 +90,12 @@ for i, ax_row in enumerate(axes):
                 images[counter],
                 cmap="gray"
             )
-            _dummy = ax.imshow(
-                masks[counter],
-                cmap=create_cmap(masks[counter]),
-                alpha=0.4
-            )
+            # Create mask for segmented cells outlines
+            cell_outlines = find_boundaries(masks[counter])
+            rgba = np.zeros((*cell_outlines.shape, 4))
+            rgba[cell_outlines] = [1, 1, 0, 1]   # yellow, fully opaque
+            rgba[~cell_outlines] = [0, 0, 0, 0]  # fully transparent
+            _dummy = ax.imshow(rgba)
             _dummy = ax.set_title(
                 f"Frame {extract_frame_id(mask_fns_plot[counter])}",
                 fontsize=8,
