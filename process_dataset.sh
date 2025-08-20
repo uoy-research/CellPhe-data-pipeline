@@ -6,6 +6,9 @@
 CONFIG=${1}
 RESUME=${2:-default}
 
+# Get absolute path to config
+CONFIG=$(realpath $CONFIG)
+
 # Prepare paths
 EXPERIMENT="$(basename $(dirname $(dirname ${CONFIG})))"
 PROJECT_DIR="/mnt/scratch/projects/biol-imaging-2024/"
