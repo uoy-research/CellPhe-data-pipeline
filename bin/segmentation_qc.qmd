@@ -23,6 +23,16 @@ library(reticulate)
 use_virtualenv("/mnt/scratch/projects/biol-imaging-2024/venv")
 ```
 
+```{r validate-fill}
+
+if (length(params$highlight_method) == 0 || !params$highlight_method %in% c('fill', 'outline')) {
+    cat("Unknown segmentation_highlight option, please choose one of 'fill', 'outline'.\nDefaulting to 'outline'\n")
+    highlight_method <- 'outline'
+} else {
+    highlight_method <- params$highlight_method
+}
+```
+
 ```{python setup_python}
 import re
 import numpy as np
@@ -116,7 +126,7 @@ for i, ax_row in enumerate(axes):
                 images[counter],
                 cmap="gray"
             )
-            if r.params['highlight_method'] == 'outline':
+            if r.highlight_method == 'outline':
                 # Create mask for segmented cells outlines
                 cell_outlines = find_boundaries(masks[counter], mode="inner")
                 # Enlarge boundaries
@@ -125,14 +135,7 @@ for i, ax_row in enumerate(axes):
                 rgba[cell_outlines] = [1, 1, 0, 1]   # yellow, fully opaque
                 rgba[~cell_outlines] = [0, 0, 0, 0]  # fully transparent
                 _dummy = ax.imshow(rgba)
-            elif r.params['highlight_method'] == 'fill':
-                _dummy = ax.imshow(
-                    masks[counter],
-                    cmap=create_cmap(masks[counter]),
-                    alpha=0.4
-                )
-            else:
-                print(f"Unknown highlight method '{r.params['highlight_method']}', defaulting to 'fill'")
+            elif r.highlight_method == 'fill':
                 _dummy = ax.imshow(
                     masks[counter],
                     cmap=create_cmap(masks[counter]),
