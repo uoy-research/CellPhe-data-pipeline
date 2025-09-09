@@ -41,6 +41,7 @@
   },
   "QC": {
     "minimum_observations": 50,
-    "minimum_cell_size": 50
+    "minimum_cell_size": 50,
+    "segmentation_highlight": "outline"
   }
 }

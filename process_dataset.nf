@@ -88,7 +88,7 @@ process segmentation_qc {
 
     script:
     """
-    quarto render ${notebook} -P masks:"${masks}" -P images:"${images}" -o "${timelapse_id}.html"
+    quarto render ${notebook} -P masks:"${masks}" -P images:"${images}" -P highlight_method:"${params.QC.segmentation_highlight}" -o "${timelapse_id}.html"
     """
 }
 
