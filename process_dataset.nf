@@ -21,8 +21,8 @@ cellphe_outputs_dir = "${cellphe_dir}/${timelapse_id}"
 process segment_image {
     label 'slurm'
     label 'slurm_retry'
-    time { 5.minute * task.attempt }
-    memory { 8.GB * task.attempt }
+    time { params.folder_names.image_type == 'HT2D' ? 20.minute * task.attempt : 5.minute * task.attempt }
+    memory { params.folder_names.image_type == 'HT2D' ? 16.GB * task.attempt : 8.GB * task.attempt }
     publishDir "${mask_dir}", mode: 'copy'
 
     input:
@@ -96,9 +96,9 @@ process track_images {
     label 'slurm'
     label 'slurm_retry'
     clusterOptions '--cpus-per-task=32 --ntasks=1'
-    time { 40.minute * task.attempt }
-    memory { 32.GB * task.attempt }
-    maxRetries 0
+    time { params.folder_names.image_type == 'HT2D' ? 240.minute * task.attempt : 40.minute * task.attempt }
+    memory { params.folder_names.image_type == 'HT2D' ? 256.GB * task.attempt : 32.GB * task.attempt }
+    maxRetries 1
 
     input:
     path mask_fns
@@ -190,8 +190,8 @@ process filter_size_and_observations {
 process cellphe_frame_features_image {
     label 'slurm'
     label 'slurm_retry'
-    time { 5.minute * task.attempt }
-    memory { 16.GB * task.attempt }
+    time { params.folder_names.image_type == 'HT2D' ? 20.minute * task.attempt : 5.minute * task.attempt }
+    memory { params.folder_names.image_type == 'HT2D' ? 128.GB * task.attempt : 16.GB * task.attempt }
 
     input:
     path image_fn
