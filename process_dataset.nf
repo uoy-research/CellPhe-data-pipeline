@@ -108,7 +108,7 @@ process track_images {
  
     script:
     """
-    mkdir masks
+    mkdir -p masks
     mv *_mask.png masks
     track_images.py masks '$task.memory' '${JsonOutput.toJson(params.tracking)}' trackmate.xml
     """

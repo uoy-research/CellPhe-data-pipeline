@@ -33,7 +33,34 @@ try:
 
     # Configure TrackMate instance
     model = sj.jimport("fiji.plugin.trackmate.Model")()
-    trackmate = configure_trackmate(model, settings)
+    settings.initialSpotFilterValue = 1.0
+
+    # Rather than using addAllAnalyzers which adds all Spot, Edge, and Track features,
+    # we want to add all bar elliptical ones, which can error in certain ROIs.
+    # It's not possible to add all the feature providers and then just remove the elliptical
+    # one, so instead we'll manually add just the ones we want
+
+    spot_provider = sj.jimport("fiji.plugin.trackmate.providers.SpotAnalyzerProvider")(1)
+    spot_keys = spot_provider.getKeys()
+    for key in spot_keys:
+        settings.addSpotAnalyzerFactory(spot_provider.getFactory(key))
+
+    morph_provider = sj.jimport("fiji.plugin.trackmate.providers.SpotMorphologyAnalyzerProvider")(1)
+    settings.addSpotAnalyzerFactory(morph_provider.getFactory('Spot 2D shape descriptors'))
+
+    edge_provider = sj.jimport("fiji.plugin.trackmate.providers.EdgeAnalyzerProvider")()
+    edge_keys = edge_provider.getKeys()
+    for key in edge_keys:
+        settings.addEdgeAnalyzer(edge_provider.getFactory(key))
+
+    track_provider = sj.jimport("fiji.plugin.trackmate.providers.TrackAnalyzerProvider")()
+    track_keys = track_provider.getKeys()
+    for key in track_keys:
+        settings.addTrackAnalyzer(track_provider.getFactory(key))
+
+    tm_cls = sj.jimport("fiji.plugin.trackmate.TrackMate")
+    trackmate = tm_cls(model, settings)
+
     print("Configured trackmate")
     if not trackmate.checkInput():
         print("Settings error")
