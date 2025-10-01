@@ -56,16 +56,12 @@ for cell_id in cell_ids:
     # No negative coordinates
     roi = np.maximum(roi, 0)
 
-    # Ensure have at least 3 pixel size in both dimensions
-    # Ideally would be done in the existing filter_size_and_observations step
-    # but that process only has access to the Trackmate features which don't contain
-    # dimension sizes
-    if np.any((roi.max(axis=0) - roi.min(axis=0)) <= 1):
-        print("Must have at least 3 pixels in both dimensions")
-        continue
-
     # Calculate static features of the frame/cell pair
-    static_features = extract_static_features(image, roi)
+    try:
+        static_features = extract_static_features(image, roi)
+    except RuntimeError:
+        # Throw from lack of interior pixels
+        pass
 
     # Collate into a dict that will later populate a data frame
     record = dict(zip(STATIC_FEATURE_NAMES, static_features))
