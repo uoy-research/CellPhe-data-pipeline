@@ -40,12 +40,13 @@ if [[ $CONFIG_DIR != "configs" || $EXPERIMENT_DIR != "Experiments" || $EXTENSION
 fi
 
 # Prepare paths
-EXPERIMENT_PATH_VIKING="/mnt/scratch/projects/biol-imaging-2024/Experiments/$EXPERIMENT"
+EXPERIMENT_PATH_VIKING_SCRATCH="/mnt/scratch/projects/biol-imaging-2024/Experiments/$EXPERIMENT"
+EXPERIMENT_PATH_VIKING_LONGSHIP="/mnt/longship/projects/biol-imaging-2024/Experiments/$EXPERIMENT"
 EXPERIMENT_PATH_RESEARCH0="/shared/storage/bioldata/bl-cellphe/Experiments/$EXPERIMENT"
-CONFIG_PATH_VIKING="$EXPERIMENT_PATH_VIKING/configs/$BASENAME"
+CONFIG_PATH_VIKING="$EXPERIMENT_PATH_VIKING_LONGSHIP/configs/$BASENAME"
 SITE=$(../tools/jq -r .folder_names.site $CONFIG)
 IMAGE=$(../tools/jq -r .folder_names.image_type $CONFIG)
-RAW_DATA_DIR="$EXPERIMENT_PATH_VIKING/raw/${SITE}_${IMAGE}"
+RAW_DATA_DIR="$EXPERIMENT_PATH_VIKING_LONGSHIP/raw/${SITE}_${IMAGE}"
 
 ml load tools/rclone
 
@@ -77,6 +78,7 @@ echo "Executing pipeline..."
 NEXTFLOW_CMD="cd /mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline && ./process_dataset.sh $CONFIG_PATH_VIKING -resume"
 ssh viking "${NEXTFLOW_CMD}"
 
-# Step 3: Transfer outputs to network share
+# Step 3: Transfer outputs from scratch to network share
+# TODO Move outputs from scratch to longship, then longship to network share can be done locally. Should this be done here or in process_dataset.sh?
 echo "Transferring outputs to bioldata..."
-rclone --config .rclone.config copy --stats-log-level NOTICE --no-update-modtime --exclude ".work/**" --exclude ".nextflow**" --exclude ".launch/**" Viking:$EXPERIMENT_PATH_VIKING $EXPERIMENT_PATH_RESEARCH0
+rclone --config .rclone.config copy --stats-log-level NOTICE --no-update-modtime --exclude ".work/**" --exclude ".nextflow**" --exclude ".launch/**" Viking:$EXPERIMENT_PATH_VIKING_SCRATCH $EXPERIMENT_PATH_RESEARCH0

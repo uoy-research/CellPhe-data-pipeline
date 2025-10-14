@@ -11,7 +11,7 @@ CONFIG=$(realpath $CONFIG)
 
 # Prepare paths
 EXPERIMENT="$(basename $(dirname $(dirname ${CONFIG})))"
-PROJECT_DIR="/mnt/scratch/projects/biol-imaging-2024/"
+PROJECT_DIR="/mnt/longship/projects/biol-imaging-2024/"
 EXPERIMENT_DIR="$PROJECT_DIR/Experiments/$EXPERIMENT"
 NEXTFLOW_FILE="$PROJECT_DIR/CellPhe-data-pipeline/process_dataset.nf"
 
@@ -33,7 +33,7 @@ export PATH=$PATH:$PROJECT_DIR/bin/apache-maven-3.9.9/bin
 # Run pipeline from a directory specific to this timelapse
 SITE=$(jq -r .folder_names.site $CONFIG)
 IMAGE=$(jq -r .folder_names.image_type $CONFIG)
-LAUNCH_DIR="$EXPERIMENT_DIR/.launch/${SITE}_${IMAGE}"
+LAUNCH_DIR="/mnt/scratch/projects/biol-imaging-2024/Experiments/$EXPERIMENT/.launch/${SITE}_${IMAGE}"
 mkdir -p $LAUNCH_DIR
 cd $LAUNCH_DIR
 CMD="srun --ntasks=1 --cpus-per-task 4 --mem=8G --time=120 nextflow run $NEXTFLOW_FILE -work-dir .work -params-file $CONFIG -ansi-log true"

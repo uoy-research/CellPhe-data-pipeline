@@ -7,10 +7,14 @@ params.folder_names = ''
 params.run = ''
 
 // Folder paths
-timelapse_id = "${params.folder_names.site}_${params.folder_names.image_type}"
+// TODO how to get experiment path here to use in longship?
 raw_dir = "../../raw/${timelapse_id}"
-processed_dir = "../../processed"
-seg_dir = "../../analysis/segmentation/${params.folder_names.segmentation}"
+experiment_name = Paths.get("../../").toAbsolutePath().getParent().toString();
+println "Experiment name: " + experiment_name
+output_folder = "/mnt/scratch/projects/biol-imaging-2024/Experiments/$experiment_name"
+timelapse_id = "${params.folder_names.site}_${params.folder_names.image_type}"
+processed_dir = "$output_folder/processed"
+seg_dir = "$output_folder/analysis/segmentation/${params.folder_names.segmentation}"
 mask_dir = "${seg_dir}/masks/${timelapse_id}"
 track_dir = "${seg_dir}/tracking/${params.folder_names.tracking}"
 trackmate_dir = "${track_dir}/trackmate"
