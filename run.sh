@@ -43,7 +43,7 @@ fi
 EXPERIMENT_PATH_VIKING_SCRATCH="/mnt/scratch/projects/biol-imaging-2024/Experiments/$EXPERIMENT"
 EXPERIMENT_PATH_VIKING_LONGSHIP="/mnt/longship/projects/biol-imaging-2024/Experiments/$EXPERIMENT"
 EXPERIMENT_PATH_RESEARCH0_STORAGE="/shared/storage/bioldata/bl-cellphe/Experiments/$EXPERIMENT"
-EXPERIMENT_PATH_RESEARCH0_LONGSHIP="/shared/longship/biol-imaging-2024/Experiments/$EXPERIMENT"
+EXPERIMENT_PATH_RESEARCH0_LONGSHIP="/shared/longship/projects/biol-imaging-2024/Experiments/$EXPERIMENT"
 CONFIG_PATH_VIKING="$EXPERIMENT_PATH_VIKING_LONGSHIP/configs/$BASENAME"
 CONFIG_PATH_LONGSHIP="$EXPERIMENT_PATH_RESEARCH0_LONGSHIP/configs/$BASENAME"
 SITE=$(../tools/jq -r .folder_names.site $CONFIG)
@@ -73,7 +73,7 @@ OUTBOUND_CMD="$OUTBOUND_CMD $RAW_DATA_DIR"
 echo "Transferring data to Viking..."
 eval $OUTBOUND_CMD
 # Also copy config file
-rclone --config .rclone.config copyto -v $CONFIG Viking:$CONFIG_PATH_LONSHIP
+rclone --config .rclone.config copyto -v $CONFIG $CONFIG_PATH_LONGSHIP
 
 # Step 2: Submit the job to process the data (waits until complete)
 echo "Executing pipeline..."
