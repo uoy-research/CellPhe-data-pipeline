@@ -494,7 +494,7 @@ workflow {
         masks = segment_image(allFiles)
           | collect
         segmentation_qc(
-            file('/mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/segmentation_qc.qmd'),
+            file('/mnt/longship/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/segmentation_qc.qmd'),
             masks,
             allFiles.collect()
         )
@@ -511,7 +511,7 @@ workflow {
             // Hacky way of getting Nextflow to find the Quarto markdown, since it can't be run with
             // a shebang like all the other files in bin/
             tracking_qc(
-                file('/mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/tracking_qc.qmd'),
+                file('/mnt/longship/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/tracking_qc.qmd'),
                 parse_trackmate_xml.out.features,
                 trackmate_feats
             )
