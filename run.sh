@@ -40,12 +40,15 @@ if [[ $CONFIG_DIR != "configs" || $EXPERIMENT_DIR != "Experiments" || $EXTENSION
 fi
 
 # Prepare paths
-EXPERIMENT_PATH_VIKING="/mnt/scratch/projects/biol-imaging-2024/Experiments/$EXPERIMENT"
-EXPERIMENT_PATH_RESEARCH0="/shared/storage/bioldata/bl-cellphe/Experiments/$EXPERIMENT"
-CONFIG_PATH_VIKING="$EXPERIMENT_PATH_VIKING/configs/$BASENAME"
+EXPERIMENT_PATH_VIKING_SCRATCH="/mnt/scratch/projects/biol-imaging-2024/Experiments/$EXPERIMENT"
+EXPERIMENT_PATH_VIKING_LONGSHIP="/mnt/longship/projects/biol-imaging-2024/Experiments/$EXPERIMENT"
+EXPERIMENT_PATH_RESEARCH0_STORAGE="/shared/storage/bioldata/bl-cellphe/Experiments/$EXPERIMENT"
+EXPERIMENT_PATH_RESEARCH0_LONGSHIP="/shared/longship/projects/biol-imaging-2024/Experiments/$EXPERIMENT"
+CONFIG_PATH_VIKING="$EXPERIMENT_PATH_VIKING_LONGSHIP/configs/$BASENAME"
+CONFIG_PATH_RESEARCH0="$EXPERIMENT_PATH_RESEARCH0_LONGSHIP/configs/$BASENAME"
 SITE=$(../tools/jq -r .folder_names.site $CONFIG)
 IMAGE=$(../tools/jq -r .folder_names.image_type $CONFIG)
-RAW_DATA_DIR="$EXPERIMENT_PATH_VIKING/raw/${SITE}_${IMAGE}"
+RAW_DATA_DIR="$EXPERIMENT_PATH_RESEARCH0_LONGSHIP/raw/${SITE}_${IMAGE}"
 
 ml load tools/rclone
 
@@ -64,19 +67,24 @@ fi
 OUTBOUND_CMD="$OUTBOUND_CMD $INCLUDES $SOURCE_CMD"
 
 # Destination is always the same
-OUTBOUND_CMD="$OUTBOUND_CMD Viking:$RAW_DATA_DIR"
+OUTBOUND_CMD="$OUTBOUND_CMD $RAW_DATA_DIR"
 
 # Copy data to viking
 echo "Transferring data to Viking..."
 eval $OUTBOUND_CMD
 # Also copy config file
-rclone --config .rclone.config copyto -v $CONFIG Viking:$CONFIG_PATH_VIKING
+rclone --config .rclone.config copyto -v $CONFIG $CONFIG_PATH_RESEARCH0
 
 # Step 2: Submit the job to process the data (waits until complete)
 echo "Executing pipeline..."
-NEXTFLOW_CMD="cd /mnt/scratch/projects/biol-imaging-2024/CellPhe-data-pipeline && ./process_dataset.sh $CONFIG_PATH_VIKING -resume"
+NEXTFLOW_CMD="cd /mnt/longship/projects/biol-imaging-2024/CellPhe-data-pipeline && ./process_dataset.sh $CONFIG_PATH_VIKING -resume"
 ssh viking "${NEXTFLOW_CMD}"
 
-# Step 3: Transfer outputs to network share
+# Step 3: Move outputs from scratch to longship
+echo "Moving outputs to longship..."
+MOVE_OUTPUTS_LONGSHIP_CMD="rsync --progress -vru --exclude .launch --remove-source-files $EXPERIMENT_PATH_VIKING_SCRATCH/ $EXPERIMENT_PATH_VIKING_LONGSHIP/"
+ssh viking "${MOVE_OUTPUTS_LONGSHIP_CMD}"
+
+# Step 4: Copy outputs from longship to bioldata
 echo "Transferring outputs to bioldata..."
-rclone --config .rclone.config copy --stats-log-level NOTICE --no-update-modtime --exclude ".work/**" --exclude ".nextflow**" --exclude ".launch/**" Viking:$EXPERIMENT_PATH_VIKING $EXPERIMENT_PATH_RESEARCH0
+rsync --progress -vru $EXPERIMENT_PATH_RESEARCH0_LONGSHIP/ $EXPERIMENT_PATH_RESEARCH0_STORAGE/
