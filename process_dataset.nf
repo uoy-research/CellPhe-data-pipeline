@@ -40,6 +40,27 @@ process segment_image {
     """
 }
 
+process segment_image_gpu {
+    label 'slurm'
+    label 'slurm_retry'
+    queue 'gpu_short'
+    clusterOptions '--gres=gpu:1'
+
+    time { params.folder_names.image_type == 'HT2D' ? 20.minute * task.attempt : 30.minute * task.attempt }
+    memory { params.folder_names.image_type == 'HT2D' ? 16.GB * task.attempt : 8.GB * task.attempt }
+    publishDir "${mask_dir}", mode: 'copy'
+
+    input:
+    path files
+
+    output:
+    path "*_mask.png"
+
+    """
+    segment_image_batch.py '${JsonOutput.toJson(params.segmentation.model)}' '${JsonOutput.toJson(params.segmentation.eval)}' '${files}'
+    """
+}
+
 process save_segmentation_config {
     label 'local'
     publishDir "${seg_dir}/config", mode: 'copy'
@@ -488,8 +509,15 @@ workflow {
 	save_segmentation_config(JsonOutput.toJson(['segmentation': params.segmentation]))
 
         // Segment all images and track
-        masks = segment_image(allFiles)
-          | collect
+        // NB: if not specified otherwise, will segment in parallel across CPU cores
+        // For GPU, this isn't feasible owing to longer queue times, so instead segment
+        // every image in one batch
+        if (params.segmentation.use_gpu) {
+            masks = segment_image_gpu(allFiles.collect())
+        } else {
+            masks = segment_image(allFiles)
+              | collect
+        }
         segmentation_qc(
             file('/mnt/longship/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/segmentation_qc.qmd'),
             masks,
