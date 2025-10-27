@@ -4,7 +4,6 @@
 #   - 1: Config file
 #   - 2: (OPTIONAL): -resume if intending to resume
 CONFIG=${1}
-RESUME=${2:-default}
 
 # Get absolute path to config
 CONFIG=$(realpath $CONFIG)
@@ -43,9 +42,5 @@ export PATH=$PATH:$PROJECT_DIR_LONGSHIP/bin/apache-maven-3.9.9/bin
 # Run pipeline from a directory specific to this timelapse
 mkdir -p $LAUNCH_DIR
 cd $LAUNCH_DIR
-CMD="srun --ntasks=1 --cpus-per-task 4 --mem=8G --time=120 nextflow run $NEXTFLOW_FILE -work-dir .work --raw_dir $RAW_DATA_DIR --output_dir $EXPERIMENT_DIR_SCRATCH -params-file $CONFIG -ansi-log true"
-if [ $RESUME == '-resume' ]
-then
-  CMD="$CMD -resume"
-fi
+CMD="srun --ntasks=1 --cpus-per-task 4 --mem=8G --time=120 nextflow run $NEXTFLOW_FILE -work-dir .work --raw_dir $RAW_DATA_DIR --output_dir $EXPERIMENT_DIR_SCRATCH -params-file $CONFIG -ansi-log true -resume"
 eval $CMD
