@@ -80,7 +80,11 @@ echo "Executing pipeline..."
 NEXTFLOW_CMD="cd /mnt/longship/projects/biol-imaging-2024/CellPhe-data-pipeline && ./process_dataset.sh $CONFIG_PATH_VIKING -resume"
 ssh viking "${NEXTFLOW_CMD}"
 
-# Step 3: Transfer outputs from scratch to network share
-# TODO Move outputs from scratch to longship, then longship to network share can be done locally. Should this be done here or in process_dataset.sh?
+# Step 3: Move outputs from scratch to longship
+echo "Moving outputs to longship..."
+MOVE_OUTPUTS_LONGSHIP_CMD="rsync --progress -vru --exclude .launch --remove-source-files $EXPERIMENT_PATH_VIKING_SCRATCH/ $EXPERIMENT_PATH_VIKING_LONGSHIP/"
+ssh viking "${MOVE_OUTPUTS_LONGSHIP_CMD}"
+
+# Step 4: Copy outputs from longship to bioldata
 echo "Transferring outputs to bioldata..."
-rclone --config .rclone.config copy --stats-log-level NOTICE --no-update-modtime --exclude ".work/**" --exclude ".nextflow**" --exclude ".launch/**" Viking:$EXPERIMENT_PATH_VIKING_SCRATCH $EXPERIMENT_PATH_RESEARCH0_STORAGE
+rsync --progress -vru $EXPERIMENT_PATH_RESEARCH0_LONGSHIP/ $EXPERIMENT_PATH_RESEARCH0_STORAGE/
