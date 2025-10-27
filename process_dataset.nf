@@ -6,15 +6,16 @@ params.tracking = ''
 params.QC = ''
 params.folder_names = ''
 params.run = ''
+params.raw_dir = ''
+params.output_dir = ''
+
+println "Raw dir: " + params.raw_dir
+println "output dir: " + params.output_dir
 
 // Folder paths
-experiment_name = Paths.get("").toAbsolutePath().getParent().getParent().getName().toString();
-output_folder = "/mnt/scratch/projects/biol-imaging-2024/Experiments/${experiment_name}"
-input_folder = "/mnt/longship/projects/biol-imaging-2024/Experiments/${experiment_name}"
 timelapse_id = "${params.folder_names.site}_${params.folder_names.image_type}"
-raw_dir = "${input_folder}/raw/${timelapse_id}"
-processed_dir = "${output_folder}/processed"
-seg_dir = "${output_folder}/analysis/segmentation/${params.folder_names.segmentation}"
+processed_dir = "${params.output_dir}/processed"
+seg_dir = "${params.output_dir}/analysis/segmentation/${params.folder_names.segmentation}"
 mask_dir = "${seg_dir}/masks/${timelapse_id}"
 track_dir = "${seg_dir}/tracking/${params.folder_names.tracking}"
 trackmate_dir = "${track_dir}/trackmate"
@@ -432,9 +433,9 @@ workflow {
     // as frame_<frameindex>.tiff. This is stored in the channel allFiles and will be used
     // for all downstream analyses
 
-    ome_companion = file("${raw_dir}/*companion.ome*")
-    jpegs = files("${raw_dir}/*.{jpg,jpeg,JPG,JPEG}")
-    tiffs = files("${raw_dir}/*.{tif,tiff,TIF,TIFF}")
+    ome_companion = file("${params.raw_dir}/*companion.ome*")
+    jpegs = files("${params.raw_dir}/*.{jpg,jpeg,JPG,JPEG}")
+    tiffs = files("${params.raw_dir}/*.{tif,tiff,TIF,TIFF}")
     if (!ome_companion.isEmpty()) {
         // OME that needs splitting into 1 tiff per frame
         // Obtain a list of all the frames in the dataset in the format:
@@ -442,7 +443,7 @@ workflow {
         xml1 = ome_get_filename(ome_companion)
             | splitText()
             | map( it -> it.trim())
-            | map( it -> file("${raw_dir}/" + it) )
+            | map( it -> file("${params.raw_dir}/" + it) )
         xml2 = ome_get_frame_t(ome_companion)
                 | splitText()
                 | map( it -> it.trim())

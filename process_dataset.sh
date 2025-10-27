@@ -9,11 +9,21 @@ RESUME=${2:-default}
 # Get absolute path to config
 CONFIG=$(realpath $CONFIG)
 
-# Prepare paths
+# Parse config to get site and image
+SITE=$(jq -r .folder_names.site $CONFIG)
+IMAGE=$(jq -r .folder_names.image_type $CONFIG)
+
+# Prepare paths - inputs
 EXPERIMENT="$(basename $(dirname $(dirname ${CONFIG})))"
-PROJECT_DIR="/mnt/longship/projects/biol-imaging-2024/"
-EXPERIMENT_DIR="$PROJECT_DIR/Experiments/$EXPERIMENT"
-NEXTFLOW_FILE="$PROJECT_DIR/CellPhe-data-pipeline/process_dataset.nf"
+PROJECT_DIR_LONGSHIP="/mnt/longship/projects/biol-imaging-2024/"
+EXPERIMENT_DIR_LONGSHIP="$PROJECT_DIR_LONGSHIP/Experiments/$EXPERIMENT"
+NEXTFLOW_FILE="$PROJECT_DIR_LONGSHIP/CellPhe-data-pipeline/process_dataset.nf"
+RAW_DATA_DIR="$EXPERIMENT_DIR_LONGSHIP/raw/${SITE}_${IMAGE}"
+
+# Outputs
+PROJECT_DIR_SCRATCH="/mnt/scratch/projects/biol-imaging-2024/"
+EXPERIMENT_DIR_SCRATCH="$PROJECT_DIR_SCRATCH/Experiments/$EXPERIMENT"
+LAUNCH_DIR="$EXPERIMENT_DIR_SCRATCH/.launch/${SITE}_${IMAGE}"
 
 # Load dependencies
 ml load Python/3.11.5-GCCcore-13.2.0
@@ -26,17 +36,14 @@ ml load Quarto/1.6.39-x86_64-linux
 ml load R/4.4.1-gfbf-2023b
 ml load R-bundle-CRAN/2024.06-foss-2023b
 ml unload SciPy-bundle/2023.11-gfbf-2023b
-source $PROJECT_DIR/venv/bin/activate
-export CELLPOSE_LOCAL_MODELS_PATH=$PROJECT_DIR/cellpose
-export PATH=$PATH:$PROJECT_DIR/bin/apache-maven-3.9.9/bin
+source $PROJECT_DIR_LONGSHIP/venv/bin/activate
+export CELLPOSE_LOCAL_MODELS_PATH=$PROJECT_DIR_LONGSHIP/cellpose
+export PATH=$PATH:$PROJECT_DIR_LONGSHIP/bin/apache-maven-3.9.9/bin
 
 # Run pipeline from a directory specific to this timelapse
-SITE=$(jq -r .folder_names.site $CONFIG)
-IMAGE=$(jq -r .folder_names.image_type $CONFIG)
-LAUNCH_DIR="/mnt/scratch/projects/biol-imaging-2024/Experiments/$EXPERIMENT/.launch/${SITE}_${IMAGE}"
 mkdir -p $LAUNCH_DIR
 cd $LAUNCH_DIR
-CMD="srun --ntasks=1 --cpus-per-task 4 --mem=8G --time=120 nextflow run $NEXTFLOW_FILE -work-dir .work -params-file $CONFIG -ansi-log true"
+CMD="srun --ntasks=1 --cpus-per-task 4 --mem=8G --time=120 nextflow run $NEXTFLOW_FILE -work-dir .work --raw_dir $RAW_DATA_DIR --output_dir $EXPERIMENT_DIR_SCRATCH -params-file $CONFIG -ansi-log true"
 if [ $RESUME == '-resume' ]
 then
   CMD="$CMD -resume"
