@@ -9,9 +9,6 @@ params.run = ''
 params.raw_dir = ''
 params.output_dir = ''
 
-println "Raw dir: " + params.raw_dir
-println "output dir: " + params.output_dir
-
 // Folder paths
 timelapse_id = "${params.folder_names.site}_${params.folder_names.image_type}"
 processed_dir = "${params.output_dir}/processed"
