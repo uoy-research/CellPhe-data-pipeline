@@ -3,14 +3,15 @@
 # Args:
 #   - 1: Config file
 #   - 2: (OPTIONAL): -resume if intending to resume
+# Get config with absolute path
 CONFIG=${1}
-
-# Get absolute path to config
 CONFIG=$(realpath $CONFIG)
-
 # Parse config to get site and image
 SITE=$(jq -r .folder_names.site $CONFIG)
 IMAGE=$(jq -r .folder_names.image_type $CONFIG)
+
+# Ensure clean environment
+ml purge
 
 # Prepare paths - inputs
 EXPERIMENT="$(basename $(dirname $(dirname ${CONFIG})))"
