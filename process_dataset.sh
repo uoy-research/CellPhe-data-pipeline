@@ -2,7 +2,7 @@
 # Wrapper for the NextFlow job submission that sets the environment before running the job
 # Args:
 #   - 1: Config file
-#   - 2: (OPTIONAL): -resume if intending to resume
+
 # Get config with absolute path
 CONFIG=${1}
 CONFIG=$(realpath $CONFIG)
@@ -14,11 +14,11 @@ IMAGE=$(jq -r .folder_names.image_type $CONFIG)
 ml purge
 
 # Prepare paths - inputs
-EXPERIMENT="$(basename $(dirname $(dirname ${CONFIG})))"
+EXPERIMENT_PATH="$(dirname $(dirname ${CONFIG}))"
+EXPERIMENT="$(basename ${EXPERIMENT_PATH})"
 PROJECT_DIR_LONGSHIP="/mnt/longship/projects/biol-imaging-2024/"
-EXPERIMENT_DIR_LONGSHIP="$PROJECT_DIR_LONGSHIP/Experiments/$EXPERIMENT"
 NEXTFLOW_FILE="$PROJECT_DIR_LONGSHIP/CellPhe-data-pipeline/process_dataset.nf"
-RAW_DATA_DIR="$EXPERIMENT_DIR_LONGSHIP/raw/${SITE}_${IMAGE}"
+RAW_DATA_DIR="$EXPERIMENT_PATH/raw/${SITE}_${IMAGE}"
 
 # Outputs
 PROJECT_DIR_SCRATCH="/mnt/scratch/projects/biol-imaging-2024/"
