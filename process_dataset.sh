@@ -35,6 +35,7 @@ ml load ImageMagick/7.1.1-34-GCCcore-13.2.0
 ml load Quarto/1.6.39-x86_64-linux
 ml load R/4.4.1-gfbf-2023b
 ml load R-bundle-CRAN/2024.06-foss-2023b
+ml load Apptainer/latest
 ml unload SciPy-bundle/2023.11-gfbf-2023b
 source $PROJECT_DIR_LONGSHIP/venv/bin/activate
 export CELLPOSE_LOCAL_MODELS_PATH=$PROJECT_DIR_LONGSHIP/cellpose
@@ -43,5 +44,6 @@ export PATH=$PATH:$PROJECT_DIR_LONGSHIP/bin/apache-maven-3.9.9/bin
 # Run pipeline from a directory specific to this timelapse
 mkdir -p $LAUNCH_DIR
 cd $LAUNCH_DIR
+export NXF_APPTAINER_CACHEDIR=$PROJECT_DIR_SCRATCH/apptainer_cache
 CMD="srun --ntasks=1 --cpus-per-task 4 --mem=8G --time=120 nextflow run $NEXTFLOW_FILE -work-dir .work --raw_dir $RAW_DATA_DIR --output_dir $EXPERIMENT_DIR_SCRATCH -params-file $CONFIG -ansi-log true -resume"
 eval $CMD

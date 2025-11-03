@@ -26,6 +26,7 @@ process segment_image {
     time { params.folder_names.image_type == 'HT2D' ? 20.minute * task.attempt : 5.minute * task.attempt }
     memory { params.folder_names.image_type == 'HT2D' ? 16.GB * task.attempt : 8.GB * task.attempt }
     publishDir "${mask_dir}", mode: 'copy'
+    container = 'biocontainers/cellpose:3.1.0_cv1'
 
     input:
     path input_fn
@@ -43,10 +44,12 @@ process segment_image {
 process segment_image_gpu {
     label 'slurm'
     label 'slurm_retry'
+    time { 30.minute * task.attempt }
     queue { task.attempt == 1 ? 'gpu_short' : 'gpu' }
     clusterOptions '--gres=gpu:1 --cpus-per-task=32 --ntasks=1'
+    container 'biocontainers/cellpose:4.0.7_cv1'
+    containerOptions '--nv'
 
-    time { 30.minute * task.attempt }
     publishDir "${mask_dir}", mode: 'copy'
 
     input:
@@ -56,7 +59,7 @@ process segment_image_gpu {
     path "*_mask.png"
 
     """
-    ~/venvs/cellpose4/bin/python /mnt/longship/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/segment_image_batch.py '${JsonOutput.toJson(params.segmentation.model)}' '${JsonOutput.toJson(params.segmentation.eval)}' '${files}'
+    segment_image_batch.py '${JsonOutput.toJson(params.segmentation.model)}' '${JsonOutput.toJson(params.segmentation.eval)}' '${files}'
     """
 }
 
