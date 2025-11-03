@@ -44,10 +44,10 @@ process segment_image_gpu {
     label 'slurm'
     label 'slurm_retry'
     queue 'gpu_short'
-    clusterOptions '--gres=gpu:1'
+    clusterOptions '--gres=gpu:1 --cpus-per-task=32 --ntasks=1'
 
-    time { params.folder_names.image_type == 'HT2D' ? 20.minute * task.attempt : 30.minute * task.attempt }
-    memory { params.folder_names.image_type == 'HT2D' ? 16.GB * task.attempt : 8.GB * task.attempt }
+    time { 30.minute * task.attempt }
+    memory 128.GB
     publishDir "${mask_dir}", mode: 'copy'
 
     input:
@@ -57,7 +57,7 @@ process segment_image_gpu {
     path "*_mask.png"
 
     """
-    segment_image_batch.py '${JsonOutput.toJson(params.segmentation.model)}' '${JsonOutput.toJson(params.segmentation.eval)}' '${files}'
+    ~/venvs/cellpose4/bin/python /mnt/longship/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/segment_image_batch.py '${JsonOutput.toJson(params.segmentation.model)}' '${JsonOutput.toJson(params.segmentation.eval)}' '${files}'
     """
 }
 
