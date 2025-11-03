@@ -43,7 +43,7 @@ process segment_image {
 process segment_image_gpu {
     label 'slurm'
     label 'slurm_retry'
-    queue 'gpu_short'
+    queue { task.attempt > 1 ? 'gpu_short' : 'gpu' }
     clusterOptions '--gres=gpu:1 --cpus-per-task=32 --ntasks=1'
 
     time { 30.minute * task.attempt }
