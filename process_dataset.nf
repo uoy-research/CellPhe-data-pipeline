@@ -115,6 +115,7 @@ process segmentation_qc {
 
     script:
     """
+    # TODO will need custom image with reticulate + Python image libraries
     quarto render ${notebook} -P masks:"${masks}" -P images:"${images}" -P highlight_method:"${params.QC.segmentation_highlight}" -o "${timelapse_id}.html"
     """
 }
@@ -137,6 +138,7 @@ process track_images {
     """
     mkdir -p masks
     mv *_mask.png masks
+    # TODO will need custom image with FIJI + trackmate maven artefact downloaded
     track_images.py masks '$task.memory' '${JsonOutput.toJson(params.tracking)}' trackmate.xml
     """
 }
@@ -158,6 +160,7 @@ process tracking_qc {
 
     script:
     """
+    # TODO just needs quarto + tidyverse
     quarto render ${notebook} -P trackmate_fn:${trackmate_raw} -P trackmate_filtered_fn:${trackmate_filtered} -o "${timelapse_id}.html"
     """
 }
@@ -179,6 +182,7 @@ process parse_trackmate_xml {
 
     script:
     """
+    # TODO will need custom image with pandas, numpy, roifile
     parse_xml.py ${xml_file} rois.zip trackmate_features.csv
     """
 }
@@ -197,6 +201,7 @@ process filter_size_and_observations {
     path "trackmate_features_filtered.csv", arity: '1', optional: true
 
     """
+    # TODO just needs tidyverse container
     #!/usr/bin/env Rscript
     library(readr)
     library(dplyr)
@@ -230,6 +235,7 @@ process cellphe_frame_features_image {
  
     script:
     """
+    # TODO will need cellphe image
     frame_features_image.py ${trackmate_csv} ${image_fn} ${roi_fn}
     """
 }
@@ -239,6 +245,7 @@ process combine_frame_features {
     label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
+    container 'debian:trixie-20251103-slim'
 
     input:
     path input_fns
@@ -268,6 +275,7 @@ process create_frame_summary_features {
  
     script:
     """
+    # TODO need cellphe image
     create_frame_summary_features.py $frame_features_static $trackmate_features frame_features.csv
     """
 }
@@ -287,6 +295,7 @@ process cellphe_time_series_features {
  
     script:
     """
+    # TODO need cellphe image
     time_series_features.py $frame_features time_series_features.csv
     """
 }
