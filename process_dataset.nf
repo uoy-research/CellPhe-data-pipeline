@@ -46,7 +46,7 @@ process segment_image_gpu {
     label 'slurm_retry'
     time { 30.minute * task.attempt }
     queue { task.attempt == 1 ? 'gpu_short' : 'gpu' }
-    clusterOptions '--gres=gpu:1 --cpus-per-task=32 --ntasks=1'
+    clusterOptions '--gres=gpu:1'
     container 'biocontainers/cellpose:4.0.7_cv1'
     containerOptions '--nv'
 
