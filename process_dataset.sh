@@ -45,5 +45,5 @@ export PATH=$PATH:$PROJECT_DIR_LONGSHIP/bin/apache-maven-3.9.9/bin
 mkdir -p $LAUNCH_DIR
 cd $LAUNCH_DIR
 export NXF_APPTAINER_CACHEDIR=$PROJECT_DIR_SCRATCH/apptainer_cache
-CMD="srun --ntasks=1 --cpus-per-task 4 --mem=8G --time=120 nextflow run $NEXTFLOW_FILE -work-dir .work --raw_dir $RAW_DATA_DIR --output_dir $EXPERIMENT_DIR_SCRATCH -params-file $CONFIG -ansi-log true -resume"
+CMD="nextflow run $NEXTFLOW_FILE -work-dir .work --raw_dir $RAW_DATA_DIR --output_dir $EXPERIMENT_DIR_SCRATCH -params-file $CONFIG -ansi-log true -resume"
 eval $CMD
