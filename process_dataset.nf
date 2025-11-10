@@ -66,6 +66,7 @@ process segment_image_gpu {
 process save_segmentation_config {
     label 'local'
     publishDir "${seg_dir}/config", mode: 'copy'
+    container 'stedolan/jq:master'
 
     input:
     val config
@@ -75,13 +76,14 @@ process save_segmentation_config {
 
     script:
     """
-    jq <<< '${config}' > "${timelapse_id}.json"
+    jq <<< '${config}' '.' > "${timelapse_id}.json"
     """
 }
 
 process save_tracking_config {
     label 'local'
     publishDir "${track_dir}/config", mode: 'copy'
+    container 'stedolan/jq:master'
 
     input:
     val config
@@ -91,7 +93,7 @@ process save_tracking_config {
 
     script:
     """
-    jq <<< '${config}' > "${timelapse_id}.json"
+    jq <<< '${config}' '.' > "${timelapse_id}.json"
     """
 }
 
