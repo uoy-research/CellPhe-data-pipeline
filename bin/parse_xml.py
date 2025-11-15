@@ -5,11 +5,31 @@ import json
 import sys
 from typing import List
 import xml.etree.ElementTree as ET
-import scyjava as sj
 import numpy as np
 import pandas as pd
-from cellphe.processing.roi import save_rois
-from cellphe.trackmate import load_detector, load_tracker
+from roifile import ImagejRoi, roiwrite
+
+def save_rois(rois: list[dict], filename: str = "rois.zip"):
+    """
+    Saves ROIs to disk.
+
+    :param rois: List of dicts, each one representing an ROI with elements:
+        - coords: 2D numpy array containing the ROI coordinates.
+        - CellID: Cell ID
+        - FrameID: Frame ID
+        - filename: Filename to save the ROI to
+    :param filename: Filename of output archive.
+    :return: None, writes to disk as a side-effect.
+    """
+    roi_objs = []
+    for roi in rois:
+        new_coords = interpolate_between_points(roi["coords"].astype(int))
+        roi_obj = ImagejRoi.frompoints(new_coords)
+        roi_obj.position = roi["FrameID"]
+        roi_obj.name = roi["Filename"]
+        roi_objs.append(roi_obj)
+
+    roiwrite(filename, roi_objs)
 
 parser = argparse.ArgumentParser(
                     description='Tracks a given image'
