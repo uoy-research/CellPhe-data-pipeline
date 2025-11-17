@@ -14,13 +14,16 @@ params:
     highlight_method: "outline"
 ---
 
+```{r set_device, dev='CairoPNG'}
+knitr::opts_chunk$set(dev='CairoPNG')
+```
+
 ```{r setup_r}
 library(dplyr)
 library(ggplot2)
-library(readr)
 Sys.unsetenv("RETICULATE_PYTHON")
 library(reticulate)
-use_virtualenv("/app/.venv")
+use_python("/usr/bin/python")
 ```
 
 ```{r validate-fill}
@@ -92,7 +95,7 @@ def create_cmap(img, page_size=20, palette="Pastel1"):
 
 @fig-segmentation shows a stitched plot of the identified segmentation masks from every 10th frame.
 
-```{python fig-segmentation, fig.cap="Segmentation masks for every 10th frame"}
+```{python fig-segmentation, fig.cap="Segmentation masks for every 10th frame", dev='png'}
 n_images = len(masks)
 COLS = 8
 ROWS = math.ceil(n_images / COLS)
