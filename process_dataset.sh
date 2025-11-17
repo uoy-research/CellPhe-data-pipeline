@@ -32,10 +32,7 @@ ml load Java/11.0.20
 ml load Perl-bundle-CPAN/5.38.0-GCCcore-13.2.0
 ml load LibTIFF/4.6.0-GCCcore-13.2.0
 ml load ImageMagick/7.1.1-34-GCCcore-13.2.0
-ml load R/4.4.1-gfbf-2023b
-ml load R-bundle-CRAN/2024.06-foss-2023b
 ml load Apptainer/latest
-ml unload SciPy-bundle/2023.11-gfbf-2023b
 source $PROJECT_DIR_LONGSHIP/venv/bin/activate
 export CELLPOSE_LOCAL_MODELS_PATH=$PROJECT_DIR_LONGSHIP/cellpose
 export PATH=$PATH:$PROJECT_DIR_LONGSHIP/bin/apache-maven-3.9.9/bin
