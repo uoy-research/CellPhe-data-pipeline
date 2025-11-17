@@ -32,7 +32,6 @@ ml load Java/11.0.20
 ml load Perl-bundle-CPAN/5.38.0-GCCcore-13.2.0
 ml load LibTIFF/4.6.0-GCCcore-13.2.0
 ml load ImageMagick/7.1.1-34-GCCcore-13.2.0
-ml load Quarto/1.6.39-x86_64-linux
 ml load R/4.4.1-gfbf-2023b
 ml load R-bundle-CRAN/2024.06-foss-2023b
 ml load Apptainer/latest

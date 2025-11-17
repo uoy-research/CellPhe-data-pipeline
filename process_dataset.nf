@@ -104,6 +104,8 @@ process segmentation_qc {
     time { 10.minute * task.attempt }
     memory { 16.GB * task.attempt }
     publishDir "${seg_dir}/QC", mode: 'copy'
+    container 'ghcr.io/uoy-research/cellphe-quarto:0.1.0'
+    containerOptions '--env "XDG_CACHE_HOME=/mnt/scratch/projects/biol-imaging-2024/.cache"'
 
     input:
     path notebook
@@ -115,7 +117,6 @@ process segmentation_qc {
 
     script:
     """
-    # TODO will need custom image with reticulate + Python image libraries
     quarto render ${notebook} -P masks:"${masks}" -P images:"${images}" -P highlight_method:"${params.QC.segmentation_highlight}" -o "${timelapse_id}.html"
     """
 }
@@ -149,6 +150,8 @@ process tracking_qc {
     time { 10.minute * task.attempt }
     memory { 16.GB * task.attempt }
     publishDir "${track_dir}/QC", mode: 'copy'
+    container 'ghcr.io/uoy-research/cellphe-quarto:0.1.0'
+    containerOptions '--env "XDG_CACHE_HOME=/mnt/scratch/projects/biol-imaging-2024/.cache"'
 
     input:
     path notebook
@@ -160,7 +163,6 @@ process tracking_qc {
 
     script:
     """
-    # TODO just needs quarto + tidyverse
     quarto render ${notebook} -P trackmate_fn:${trackmate_raw} -P trackmate_filtered_fn:${trackmate_filtered} -o "${timelapse_id}.html"
     """
 }
