@@ -20,7 +20,7 @@ library(ggplot2)
 library(readr)
 Sys.unsetenv("RETICULATE_PYTHON")
 library(reticulate)
-use_virtualenv("/mnt/scratch/projects/biol-imaging-2024/venv")
+use_virtualenv("/app/.venv")
 ```
 
 ```{r validate-fill}
