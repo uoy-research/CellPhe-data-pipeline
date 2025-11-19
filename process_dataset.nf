@@ -125,6 +125,8 @@ process track_images {
     label 'slurm'
     label 'slurm_retry'
     clusterOptions '--cpus-per-task=32 --ntasks=1'
+    container 'ghcr.io/uoy-research/cellphe-trackmate:0.1.0'
+    containerOptions '-H /trackmate_libs'
     time { params.folder_names.image_type == 'HT2D' ? 240.minute * task.attempt : 40.minute * task.attempt }
     memory { params.folder_names.image_type == 'HT2D' ? 256.GB * task.attempt : 32.GB * task.attempt }
     maxRetries 1
@@ -139,8 +141,8 @@ process track_images {
     """
     mkdir -p masks
     mv *_mask.png masks
-    # TODO will need custom image with FIJI + trackmate maven artefact downloaded
     track_images.py masks '$task.memory' '${JsonOutput.toJson(params.tracking)}' trackmate.xml
+    # TODO Test all CPUs make it to container
     """
 }
 
@@ -171,6 +173,7 @@ process parse_trackmate_xml {
     label 'slurm'
     label 'slurm_retry'
     clusterOptions '--cpus-per-task=4 --ntasks=1'
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
     time { 20.minute * task.attempt }
     memory { 8.GB * task.attempt }
     publishDir "${trackmate_outputs_dir}", mode: 'copy'
@@ -184,8 +187,8 @@ process parse_trackmate_xml {
 
     script:
     """
-    # TODO will need custom image with pandas, numpy, roifile
     parse_xml.py ${xml_file} rois.zip trackmate_features.csv
+    # TODO make sure cpus make it into container
     """
 }
 
@@ -195,6 +198,7 @@ process filter_size_and_observations {
     time { 5.minute * task.attempt }
     memory { 8.GB * task.attempt }
     publishDir "${trackmate_outputs_dir}", mode: 'copy'
+    container 'ghcr.io/uoy-research/cellphe-r:0.1.0'
 
     input:
     path features_original
@@ -203,11 +207,9 @@ process filter_size_and_observations {
     path "trackmate_features_filtered.csv", arity: '1', optional: true
 
     """
-    # TODO just needs tidyverse container
     #!/usr/bin/env Rscript
-    library(readr)
     library(dplyr)
-    df <- read_csv("${features_original}")
+    df <- read.csv("${features_original}")
     feats <- df |>
         filter(
           AREA >= as.integer(${params.QC.minimum_cell_size})
@@ -216,7 +218,7 @@ process filter_size_and_observations {
         filter(n() >= as.integer(${params.QC.minimum_observations})) |>
         ungroup()
     if (nrow(feats) > 0) {
-        write_csv(feats, "trackmate_features_filtered.csv")
+        write.csv(feats, "trackmate_features_filtered.csv", row.names=FALSE)
     }
     """
 }
