@@ -338,7 +338,7 @@ process ome_get_frame_t {
 
 process ome_get_filename {
     label 'local'
-    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-xpath:0.1.0'
 
     input:
     path(xml_file)
