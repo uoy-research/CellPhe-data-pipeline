@@ -269,7 +269,7 @@ process create_frame_summary_features {
     time { 15.minute * task.attempt }
     memory { 4.GB * task.attempt }
     publishDir "${cellphe_outputs_dir}", mode: 'copy'
-    container 'ghcr.io/uoy-research/cellphe-cellphpy:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
 
     input:
     path(frame_features_static) 
@@ -290,7 +290,7 @@ process cellphe_time_series_features {
     time { 30.minute * task.attempt }
     memory { 4.GB * task.attempt }
     publishDir "${cellphe_outputs_dir}", mode: 'copy'
-    container 'ghcr.io/uoy-research/cellphe-cellphpy:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
 
     input:
     path(frame_features) 

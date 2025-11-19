@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import cellphe
+from cellphe.input import import_data
+from cellphe.features.frame import STATIC_FEATURE_NAMES
 import argparse
 import pandas as pd
 import numpy as np
@@ -15,7 +16,7 @@ args = parser.parse_args()
 
 # Read in the combined static features
 feature_df = pd.read_csv(args.frame_features)
-trackmate_df = cellphe.import_data(args.trackmate, "Trackmate_auto")
+trackmate_df = import_data(args.trackmate, "Trackmate_auto")
 
 # Movement features
 # Overall distance since starting point
@@ -61,7 +62,7 @@ feature_df = feature_df.merge(trackmate_df, on=["CellID", "FrameID", "ROI_filena
 feature_df['dens'] = 0
 
 # Reorder columns
-col_order = trackmate_df.columns.values.tolist() + ["Dis", "Trac", "D2T", "Vel"] + cellphe.features.frame.STATIC_FEATURE_NAMES + ["dens"]
+col_order = trackmate_df.columns.values.tolist() + ["Dis", "Trac", "D2T", "Vel"] + STATIC_FEATURE_NAMES + ["dens"]
 feature_df = feature_df[col_order]
 
 # Set data types for anything that isn't float
