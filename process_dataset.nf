@@ -228,6 +228,7 @@ process cellphe_frame_features_image {
     label 'slurm_retry'
     time { params.folder_names.image_type == 'HT2D' ? 20.minute * task.attempt : 5.minute * task.attempt }
     memory { params.folder_names.image_type == 'HT2D' ? 128.GB * task.attempt : 16.GB * task.attempt }
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
 
     input:
     path image_fn
@@ -239,7 +240,6 @@ process cellphe_frame_features_image {
  
     script:
     """
-    # TODO will need cellphe image
     frame_features_image.py ${trackmate_csv} ${image_fn} ${roi_fn}
     """
 }
@@ -249,7 +249,7 @@ process combine_frame_features {
     label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
-    container 'debian:trixie-20251103-slim'
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
     input:
     path input_fns
@@ -269,6 +269,7 @@ process create_frame_summary_features {
     time { 15.minute * task.attempt }
     memory { 4.GB * task.attempt }
     publishDir "${cellphe_outputs_dir}", mode: 'copy'
+    container 'ghcr.io/uoy-research/cellphe-cellphpy:0.1.0'
 
     input:
     path(frame_features_static) 
@@ -279,7 +280,6 @@ process create_frame_summary_features {
  
     script:
     """
-    # TODO need cellphe image
     create_frame_summary_features.py $frame_features_static $trackmate_features frame_features.csv
     """
 }
@@ -290,6 +290,7 @@ process cellphe_time_series_features {
     time { 30.minute * task.attempt }
     memory { 4.GB * task.attempt }
     publishDir "${cellphe_outputs_dir}", mode: 'copy'
+    container 'ghcr.io/uoy-research/cellphe-cellphpy:0.1.0'
 
     input:
     path(frame_features) 
@@ -299,13 +300,13 @@ process cellphe_time_series_features {
  
     script:
     """
-    # TODO need cellphe image
     time_series_features.py $frame_features time_series_features.csv
     """
 }
 
 process ome_get_global_t {
     label 'local'
+    container 'ghcr.io/uoy-research/cellphe-xpath:0.1.0'
 
     input:
     path(xml_file)
@@ -321,6 +322,7 @@ process ome_get_global_t {
 
 process ome_get_frame_t {
     label 'local'
+    container 'ghcr.io/uoy-research/cellphe-xpath:0.1.0'
 
     input:
     path(xml_file)
@@ -336,6 +338,7 @@ process ome_get_frame_t {
 
 process ome_get_filename {
     label 'local'
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
     input:
     path(xml_file)
@@ -351,6 +354,7 @@ process ome_get_filename {
 
 process split_ome_frames {
     label 'local'
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
     input:
     tuple path(ome_fn), val(frame_index), val(global_frame_index)
@@ -367,6 +371,7 @@ process split_ome_frames {
 
 process remove_spaces {
   label 'local'
+  container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
   input:
   path in_file
@@ -386,6 +391,7 @@ process rename_frames {
     label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
 
     input:
     path in_files
@@ -411,6 +417,7 @@ process split_stacked_tiff {
     label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
     input:
     path(stacked_tiff) 
@@ -430,6 +437,7 @@ process create_tiff_stack {
     memory 8.GB
     publishDir "${processed_dir}", mode: 'move'
     errorStrategy 'ignore'
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
     input:
     path(frames) 
@@ -445,6 +453,7 @@ process create_tiff_stack {
 
 process convert_jpeg {
     label 'local'
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
     input:
     path(infile) 
