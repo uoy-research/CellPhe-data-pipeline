@@ -105,7 +105,7 @@ process segmentation_qc {
     memory { 16.GB * task.attempt }
     publishDir "${seg_dir}/QC", mode: 'copy'
     container 'ghcr.io/uoy-research/cellphe-quarto:0.1.0'
-    containerOptions '--env "XDG_CACHE_HOME=/mnt/scratch/projects/biol-imaging-2024/.cache"'
+    containerOptions '--env "XDG_CACHE_HOME=/tmp" --contain'
 
     input:
     path notebook
@@ -152,7 +152,7 @@ process tracking_qc {
     memory { 16.GB * task.attempt }
     publishDir "${track_dir}/QC", mode: 'copy'
     container 'ghcr.io/uoy-research/cellphe-quarto:0.1.0'
-    containerOptions '--env "XDG_CACHE_HOME=/mnt/scratch/projects/biol-imaging-2024/.cache"'
+    containerOptions '--env "XDG_CACHE_HOME=/tmp" --contain'
 
     input:
     path notebook
