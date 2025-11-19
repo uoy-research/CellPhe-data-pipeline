@@ -142,7 +142,6 @@ process track_images {
     mkdir -p masks
     mv *_mask.png masks
     track_images.py masks '$task.memory' '${JsonOutput.toJson(params.tracking)}' trackmate.xml
-    # TODO Test all CPUs make it to container
     """
 }
 
@@ -188,7 +187,6 @@ process parse_trackmate_xml {
     script:
     """
     parse_xml.py ${xml_file} rois.zip trackmate_features.csv
-    # TODO make sure cpus make it into container
     """
 }
 
