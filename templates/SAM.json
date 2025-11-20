@@ -16,8 +16,7 @@
       "gpu": true
     },
     "eval": {
-    },
-    "use_gpu": true
+    }
   },
   "tracking": {
     "algorithm": "SparseLAP",

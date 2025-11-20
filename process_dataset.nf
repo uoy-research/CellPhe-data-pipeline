@@ -536,7 +536,7 @@ workflow {
         // NB: if not specified otherwise, will segment in parallel across CPU cores
         // For GPU, this isn't feasible owing to longer queue times, so instead segment
         // every image in one batch
-        if (params.segmentation.use_gpu) {
+        if (params.segmentation.model.gpu) {
             masks = segment_image_gpu(allFiles.collect())
         } else {
             masks = segment_image(allFiles)
