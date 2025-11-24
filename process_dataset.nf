@@ -26,6 +26,7 @@ process segment_image {
     time { params.folder_names.image_type == 'HT2D' ? 20.minute * task.attempt : 5.minute * task.attempt }
     memory { params.folder_names.image_type == 'HT2D' ? 16.GB * task.attempt : 8.GB * task.attempt }
     publishDir "${mask_dir}", mode: 'copy'
+    container = 'biocontainers/cellpose:3.1.0_cv1'
 
     input:
     path input_fn
@@ -40,9 +41,32 @@ process segment_image {
     """
 }
 
+process segment_image_gpu {
+    label 'slurm'
+    label 'slurm_retry'
+    time { 30.minute * task.attempt }
+    queue { task.attempt == 1 ? 'gpu_short' : 'gpu' }
+    clusterOptions '--gres=gpu:1'
+    container 'biocontainers/cellpose:4.0.7_cv1'
+    containerOptions '--nv'
+
+    publishDir "${mask_dir}", mode: 'copy'
+
+    input:
+    path files
+
+    output:
+    path "*_mask.png"
+
+    """
+    segment_image_batch.py '${JsonOutput.toJson(params.segmentation.model)}' '${JsonOutput.toJson(params.segmentation.eval)}' '${files}'
+    """
+}
+
 process save_segmentation_config {
     label 'local'
     publishDir "${seg_dir}/config", mode: 'copy'
+    container 'stedolan/jq:master'
 
     input:
     val config
@@ -52,13 +76,14 @@ process save_segmentation_config {
 
     script:
     """
-    jq <<< '${config}' > "${timelapse_id}.json"
+    jq <<< '${config}' '.' > "${timelapse_id}.json"
     """
 }
 
 process save_tracking_config {
     label 'local'
     publishDir "${track_dir}/config", mode: 'copy'
+    container 'stedolan/jq:master'
 
     input:
     val config
@@ -68,7 +93,7 @@ process save_tracking_config {
 
     script:
     """
-    jq <<< '${config}' > "${timelapse_id}.json"
+    jq <<< '${config}' '.' > "${timelapse_id}.json"
     """
 }
 
@@ -79,6 +104,8 @@ process segmentation_qc {
     time { 10.minute * task.attempt }
     memory { 16.GB * task.attempt }
     publishDir "${seg_dir}/QC", mode: 'copy'
+    container 'ghcr.io/uoy-research/cellphe-quarto:0.1.0'
+    containerOptions '--env "XDG_CACHE_HOME=/tmp" --contain'
 
     input:
     path notebook
@@ -98,6 +125,8 @@ process track_images {
     label 'slurm'
     label 'slurm_retry'
     clusterOptions '--cpus-per-task=32 --ntasks=1'
+    container 'ghcr.io/uoy-research/cellphe-trackmate:0.1.0'
+    containerOptions '-H /trackmate_libs'
     time { params.folder_names.image_type == 'HT2D' ? 240.minute * task.attempt : 40.minute * task.attempt }
     memory { params.folder_names.image_type == 'HT2D' ? 256.GB * task.attempt : 32.GB * task.attempt }
     maxRetries 1
@@ -122,6 +151,8 @@ process tracking_qc {
     time { 10.minute * task.attempt }
     memory { 16.GB * task.attempt }
     publishDir "${track_dir}/QC", mode: 'copy'
+    container 'ghcr.io/uoy-research/cellphe-quarto:0.1.0'
+    containerOptions '--env "XDG_CACHE_HOME=/tmp" --contain'
 
     input:
     path notebook
@@ -141,6 +172,7 @@ process parse_trackmate_xml {
     label 'slurm'
     label 'slurm_retry'
     clusterOptions '--cpus-per-task=4 --ntasks=1'
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
     time { 20.minute * task.attempt }
     memory { 8.GB * task.attempt }
     publishDir "${trackmate_outputs_dir}", mode: 'copy'
@@ -164,6 +196,7 @@ process filter_size_and_observations {
     time { 5.minute * task.attempt }
     memory { 8.GB * task.attempt }
     publishDir "${trackmate_outputs_dir}", mode: 'copy'
+    container 'ghcr.io/uoy-research/cellphe-r:0.1.0'
 
     input:
     path features_original
@@ -173,9 +206,8 @@ process filter_size_and_observations {
 
     """
     #!/usr/bin/env Rscript
-    library(readr)
     library(dplyr)
-    df <- read_csv("${features_original}")
+    df <- read.csv("${features_original}")
     feats <- df |>
         filter(
           AREA >= as.integer(${params.QC.minimum_cell_size})
@@ -184,7 +216,7 @@ process filter_size_and_observations {
         filter(n() >= as.integer(${params.QC.minimum_observations})) |>
         ungroup()
     if (nrow(feats) > 0) {
-        write_csv(feats, "trackmate_features_filtered.csv")
+        write.csv(feats, "trackmate_features_filtered.csv", row.names=FALSE)
     }
     """
 }
@@ -194,6 +226,7 @@ process cellphe_frame_features_image {
     label 'slurm_retry'
     time { params.folder_names.image_type == 'HT2D' ? 20.minute * task.attempt : 5.minute * task.attempt }
     memory { params.folder_names.image_type == 'HT2D' ? 128.GB * task.attempt : 16.GB * task.attempt }
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
 
     input:
     path image_fn
@@ -214,6 +247,7 @@ process combine_frame_features {
     label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
     input:
     path input_fns
@@ -233,6 +267,7 @@ process create_frame_summary_features {
     time { 15.minute * task.attempt }
     memory { 4.GB * task.attempt }
     publishDir "${cellphe_outputs_dir}", mode: 'copy'
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
 
     input:
     path(frame_features_static) 
@@ -253,6 +288,7 @@ process cellphe_time_series_features {
     time { 30.minute * task.attempt }
     memory { 4.GB * task.attempt }
     publishDir "${cellphe_outputs_dir}", mode: 'copy'
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
 
     input:
     path(frame_features) 
@@ -268,6 +304,7 @@ process cellphe_time_series_features {
 
 process ome_get_global_t {
     label 'local'
+    container 'ghcr.io/uoy-research/cellphe-xpath:0.1.0'
 
     input:
     path(xml_file)
@@ -283,6 +320,7 @@ process ome_get_global_t {
 
 process ome_get_frame_t {
     label 'local'
+    container 'ghcr.io/uoy-research/cellphe-xpath:0.1.0'
 
     input:
     path(xml_file)
@@ -298,6 +336,7 @@ process ome_get_frame_t {
 
 process ome_get_filename {
     label 'local'
+    container 'ghcr.io/uoy-research/cellphe-xpath:0.1.0'
 
     input:
     path(xml_file)
@@ -313,6 +352,7 @@ process ome_get_filename {
 
 process split_ome_frames {
     label 'local'
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
     input:
     tuple path(ome_fn), val(frame_index), val(global_frame_index)
@@ -329,6 +369,7 @@ process split_ome_frames {
 
 process remove_spaces {
   label 'local'
+  container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
   input:
   path in_file
@@ -348,6 +389,7 @@ process rename_frames {
     label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
 
     input:
     path in_files
@@ -373,6 +415,7 @@ process split_stacked_tiff {
     label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
     input:
     path(stacked_tiff) 
@@ -392,6 +435,7 @@ process create_tiff_stack {
     memory 8.GB
     publishDir "${processed_dir}", mode: 'move'
     errorStrategy 'ignore'
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
     input:
     path(frames) 
@@ -407,6 +451,7 @@ process create_tiff_stack {
 
 process convert_jpeg {
     label 'local'
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
     input:
     path(infile) 
@@ -488,8 +533,15 @@ workflow {
 	save_segmentation_config(JsonOutput.toJson(['segmentation': params.segmentation]))
 
         // Segment all images and track
-        masks = segment_image(allFiles)
-          | collect
+        // NB: if not specified otherwise, will segment in parallel across CPU cores
+        // For GPU, this isn't feasible owing to longer queue times, so instead segment
+        // every image in one batch
+        if (params.segmentation.model.gpu) {
+            masks = segment_image_gpu(allFiles.collect())
+        } else {
+            masks = segment_image(allFiles)
+              | collect
+        }
         segmentation_qc(
             file('/mnt/longship/projects/biol-imaging-2024/CellPhe-data-pipeline/bin/segmentation_qc.qmd'),
             masks,

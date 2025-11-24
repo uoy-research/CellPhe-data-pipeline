@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-from cellphe import import_data
 from cellphe.features.frame import extract_static_features, STATIC_FEATURE_NAMES
-from cellphe.input import read_rois, read_tiff
+from cellphe.input import read_rois, read_tiff, import_data
 from cellphe.processing import normalise_image
 import argparse
 import re

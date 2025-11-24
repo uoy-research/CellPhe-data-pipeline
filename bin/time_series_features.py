@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from cellphe import time_series_features
+from cellphe.features import time_series_features
 import pandas as pd
 import argparse
 

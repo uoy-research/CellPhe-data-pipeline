@@ -2,22 +2,23 @@
 # Wrapper for the NextFlow job submission that sets the environment before running the job
 # Args:
 #   - 1: Config file
-#   - 2: (OPTIONAL): -resume if intending to resume
+
+# Get config with absolute path
 CONFIG=${1}
-
-# Get absolute path to config
 CONFIG=$(realpath $CONFIG)
-
 # Parse config to get site and image
 SITE=$(jq -r .folder_names.site $CONFIG)
 IMAGE=$(jq -r .folder_names.image_type $CONFIG)
 
+# Ensure clean environment
+ml purge
+
 # Prepare paths - inputs
-EXPERIMENT="$(basename $(dirname $(dirname ${CONFIG})))"
+EXPERIMENT_PATH="$(dirname $(dirname ${CONFIG}))"
+EXPERIMENT="$(basename ${EXPERIMENT_PATH})"
 PROJECT_DIR_LONGSHIP="/mnt/longship/projects/biol-imaging-2024/"
-EXPERIMENT_DIR_LONGSHIP="$PROJECT_DIR_LONGSHIP/Experiments/$EXPERIMENT"
 NEXTFLOW_FILE="$PROJECT_DIR_LONGSHIP/CellPhe-data-pipeline/process_dataset.nf"
-RAW_DATA_DIR="$EXPERIMENT_DIR_LONGSHIP/raw/${SITE}_${IMAGE}"
+RAW_DATA_DIR="$EXPERIMENT_PATH/raw/${SITE}_${IMAGE}"
 
 # Outputs
 PROJECT_DIR_SCRATCH="/mnt/scratch/projects/biol-imaging-2024/"
@@ -25,16 +26,8 @@ EXPERIMENT_DIR_SCRATCH="$PROJECT_DIR_SCRATCH/Experiments/$EXPERIMENT"
 LAUNCH_DIR="$EXPERIMENT_DIR_SCRATCH/.launch/${SITE}_${IMAGE}"
 
 # Load dependencies
-ml load Python/3.11.5-GCCcore-13.2.0
 ml load Nextflow/23.10.0
-ml load Java/11.0.20
-ml load Perl-bundle-CPAN/5.38.0-GCCcore-13.2.0
-ml load LibTIFF/4.6.0-GCCcore-13.2.0
-ml load ImageMagick/7.1.1-34-GCCcore-13.2.0
-ml load Quarto/1.6.39-x86_64-linux
-ml load R/4.4.1-gfbf-2023b
-ml load R-bundle-CRAN/2024.06-foss-2023b
-ml unload SciPy-bundle/2023.11-gfbf-2023b
+ml load Apptainer/latest
 source $PROJECT_DIR_LONGSHIP/venv/bin/activate
 export CELLPOSE_LOCAL_MODELS_PATH=$PROJECT_DIR_LONGSHIP/cellpose
 export PATH=$PATH:$PROJECT_DIR_LONGSHIP/bin/apache-maven-3.9.9/bin
@@ -42,5 +35,6 @@ export PATH=$PATH:$PROJECT_DIR_LONGSHIP/bin/apache-maven-3.9.9/bin
 # Run pipeline from a directory specific to this timelapse
 mkdir -p $LAUNCH_DIR
 cd $LAUNCH_DIR
-CMD="srun --ntasks=1 --cpus-per-task 4 --mem=8G --time=120 nextflow run $NEXTFLOW_FILE -work-dir .work --raw_dir $RAW_DATA_DIR --output_dir $EXPERIMENT_DIR_SCRATCH -params-file $CONFIG -ansi-log true -resume"
+export NXF_APPTAINER_CACHEDIR=$PROJECT_DIR_SCRATCH/apptainer_cache
+CMD="nextflow run $NEXTFLOW_FILE -work-dir .work --raw_dir $RAW_DATA_DIR --output_dir $EXPERIMENT_DIR_SCRATCH -params-file $CONFIG -ansi-log true -resume"
 eval $CMD

@@ -13,12 +13,16 @@ params:
     trackmate_filtered_fn: ''
 ---
 
+```{r set_device, dev='CairoPNG'}
+knitr::opts_chunk$set(dev='CairoPNG')
+```
+
 ```{r load_data}
-library(tidyverse)
+library(dplyr)
+library(ggplot2)
 
-
-df_raw <- read_csv(params$trackmate_fn)
-df_filtered <- read_csv(params$trackmate_filtered_fn)
+df_raw <- read.csv(params$trackmate_fn)
+df_filtered <- read.csv(params$trackmate_filtered_fn)
 ```
 
 
