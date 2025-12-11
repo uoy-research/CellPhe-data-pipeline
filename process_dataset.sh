@@ -17,7 +17,7 @@ ml purge
 EXPERIMENT_PATH="$(dirname $(dirname ${CONFIG}))"
 EXPERIMENT="$(basename ${EXPERIMENT_PATH})"
 PROJECT_DIR_LONGSHIP="/mnt/longship/projects/biol-imaging-2024/"
-NEXTFLOW_FILE="$PROJECT_DIR_LONGSHIP/CellPhe-data-pipeline/process_dataset.nf"
+NEXTFLOW_FILE="$PROJECT_DIR_LONGSHIP/CellPhe-data-pipeline/main.nf"
 RAW_DATA_DIR="$EXPERIMENT_PATH/raw/${SITE}_${IMAGE}"
 
 # Outputs
