@@ -10,6 +10,7 @@ params.raw_dir = ''
 params.output_dir = ''
 
 // Folder paths
+// TODO replace site & image_type with single timelapse id in config?
 timelapse_id = "${params.folder_names.site}_${params.folder_names.image_type}"
 processed_dir = "${params.output_dir}/processed"
 seg_dir = "${params.output_dir}/analysis/segmentation/${params.folder_names.segmentation}"
@@ -21,8 +22,6 @@ cellphe_dir = "${track_dir}/cellphe"
 cellphe_outputs_dir = "${cellphe_dir}/${timelapse_id}"
 
 process segment_image {
-    label 'slurm'
-    label 'slurm_retry'
     time { params.folder_names.image_type == 'HT2D' ? 20.minute * task.attempt : 5.minute * task.attempt }
     memory { params.folder_names.image_type == 'HT2D' ? 16.GB * task.attempt : 8.GB * task.attempt }
     publishDir "${mask_dir}", mode: 'copy'
@@ -42,8 +41,6 @@ process segment_image {
 }
 
 process segment_image_gpu {
-    label 'slurm'
-    label 'slurm_retry'
     time { 30.minute * task.attempt }
     queue { task.attempt == 1 ? 'gpu_short' : 'gpu' }
     clusterOptions '--gres=gpu:1'
@@ -64,7 +61,7 @@ process segment_image_gpu {
 }
 
 process save_segmentation_config {
-    label 'local'
+    label 'small'
     publishDir "${seg_dir}/config", mode: 'copy'
     container 'stedolan/jq:master'
 
@@ -81,7 +78,7 @@ process save_segmentation_config {
 }
 
 process save_tracking_config {
-    label 'local'
+    label 'small'
     publishDir "${track_dir}/config", mode: 'copy'
     container 'stedolan/jq:master'
 
@@ -99,8 +96,6 @@ process save_tracking_config {
 
 
 process segmentation_qc {
-    label 'slurm'
-    label 'slurm_retry'
     time { 10.minute * task.attempt }
     memory { 16.GB * task.attempt }
     publishDir "${seg_dir}/QC", mode: 'copy'
@@ -122,14 +117,10 @@ process segmentation_qc {
 }
 
 process track_images {
-    label 'slurm'
-    label 'slurm_retry'
-    clusterOptions '--cpus-per-task=32 --ntasks=1'
     container 'ghcr.io/uoy-research/cellphe-trackmate:0.1.0'
     containerOptions '-H /trackmate_libs'
     time { params.folder_names.image_type == 'HT2D' ? 240.minute * task.attempt : 40.minute * task.attempt }
     memory { params.folder_names.image_type == 'HT2D' ? 256.GB * task.attempt : 32.GB * task.attempt }
-    maxRetries 1
 
     input:
     path mask_fns
@@ -146,8 +137,6 @@ process track_images {
 }
 
 process tracking_qc {
-    label 'slurm'
-    label 'slurm_retry'
     time { 10.minute * task.attempt }
     memory { 16.GB * task.attempt }
     publishDir "${track_dir}/QC", mode: 'copy'
@@ -169,9 +158,6 @@ process tracking_qc {
 }
 
 process parse_trackmate_xml {
-    label 'slurm'
-    label 'slurm_retry'
-    clusterOptions '--cpus-per-task=4 --ntasks=1'
     container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
     time { 20.minute * task.attempt }
     memory { 8.GB * task.attempt }
@@ -191,8 +177,6 @@ process parse_trackmate_xml {
 }
 
 process filter_size_and_observations {
-    label 'slurm'
-    label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 8.GB * task.attempt }
     publishDir "${trackmate_outputs_dir}", mode: 'copy'
@@ -222,8 +206,6 @@ process filter_size_and_observations {
 }
 
 process cellphe_frame_features_image {
-    label 'slurm'
-    label 'slurm_retry'
     time { params.folder_names.image_type == 'HT2D' ? 20.minute * task.attempt : 5.minute * task.attempt }
     memory { params.folder_names.image_type == 'HT2D' ? 128.GB * task.attempt : 16.GB * task.attempt }
     container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
@@ -243,8 +225,6 @@ process cellphe_frame_features_image {
 }
 
 process combine_frame_features {
-    label 'slurm'
-    label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
     container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
@@ -262,8 +242,6 @@ process combine_frame_features {
 }
 
 process create_frame_summary_features {
-    label 'slurm'
-    label 'slurm_retry'
     time { 15.minute * task.attempt }
     memory { 4.GB * task.attempt }
     publishDir "${cellphe_outputs_dir}", mode: 'copy'
@@ -283,8 +261,6 @@ process create_frame_summary_features {
 }
 
 process cellphe_time_series_features {
-    label 'slurm'
-    label 'slurm_retry'
     time { 30.minute * task.attempt }
     memory { 4.GB * task.attempt }
     publishDir "${cellphe_outputs_dir}", mode: 'copy'
@@ -303,7 +279,7 @@ process cellphe_time_series_features {
 }
 
 process ome_get_global_t {
-    label 'local'
+    label 'small'
     container 'ghcr.io/uoy-research/cellphe-xpath:0.1.0'
 
     input:
@@ -319,7 +295,7 @@ process ome_get_global_t {
 }
 
 process ome_get_frame_t {
-    label 'local'
+    label 'small'
     container 'ghcr.io/uoy-research/cellphe-xpath:0.1.0'
 
     input:
@@ -335,7 +311,7 @@ process ome_get_frame_t {
 }
 
 process ome_get_filename {
-    label 'local'
+    label 'small'
     container 'ghcr.io/uoy-research/cellphe-xpath:0.1.0'
 
     input:
@@ -351,7 +327,7 @@ process ome_get_filename {
 }
 
 process split_ome_frames {
-    label 'local'
+    label 'small'
     container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
     input:
@@ -368,7 +344,7 @@ process split_ome_frames {
 }
 
 process remove_spaces {
-  label 'local'
+  label 'small'
   container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
   input:
@@ -385,8 +361,6 @@ process remove_spaces {
 }
 
 process rename_frames {
-    label 'slurm'
-    label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
     container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
@@ -411,8 +385,6 @@ process rename_frames {
 }
 
 process split_stacked_tiff {
-    label 'slurm'
-    label 'slurm_retry'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
     container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
@@ -430,11 +402,9 @@ process split_stacked_tiff {
 }
 
 process create_tiff_stack {
-    label 'slurm'
     time 30.minute
     memory 8.GB
     publishDir "${processed_dir}", mode: 'move'
-    errorStrategy 'ignore'
     container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
     input:
@@ -450,7 +420,7 @@ process create_tiff_stack {
 }
 
 process convert_jpeg {
-    label 'local'
+    label 'small'
     container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
 
     input:
