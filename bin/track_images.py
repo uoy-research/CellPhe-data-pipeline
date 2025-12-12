@@ -132,7 +132,10 @@ parser.add_argument('xml_path', help="Where to save the XML to")
 args = parser.parse_args()
 
 # Comes through as 'X GB' from Nextflow, obtain the number
-requested_memory = int(args.memory.split(" ")[0])
+try:
+    requested_memory = int(args.memory.split(" ")[0])
+except ValueError:
+    requested_memory = None
 config = json.loads(args.config)
 mask_dir = args.mask_dir
 tracker = config['algorithm']
