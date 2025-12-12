@@ -11,6 +11,7 @@ params.output_dir = ''
 
 // Folder paths
 // TODO replace site & image_type with single timelapse id in config?
+// TODO cellpose models need to be baked into the Apptainer image?
 timelapse_id = "${params.folder_names.site}_${params.folder_names.image_type}"
 processed_dir = "${params.output_dir}/processed"
 seg_dir = "${params.output_dir}/analysis/segmentation/${params.folder_names.segmentation}"
@@ -58,7 +59,7 @@ process segment_image_gpu {
 }
 
 process save_segmentation_config {
-    container 'stedolan/jq:master'
+    container 'ghcr.io/uoy-research/cellphe-jq:0.1.0'
     publishDir "${seg_dir}/config", mode: 'copy'
     label 'small'
 
@@ -75,7 +76,7 @@ process save_segmentation_config {
 }
 
 process save_tracking_config {
-    container 'stedolan/jq:master'
+    container 'ghcr.io/uoy-research/cellphe-jq:0.1.0'
     publishDir "${track_dir}/config", mode: 'copy'
     label 'small'
 
@@ -94,6 +95,7 @@ process save_tracking_config {
 
 process segmentation_qc {
     container 'ghcr.io/uoy-research/cellphe-quarto:0.1.0'
+    // TODO update all cellphe images to latest version
     containerOptions '--env "XDG_CACHE_HOME=/tmp" --contain'
     publishDir "${seg_dir}/QC", mode: 'copy'
     time { 10.minute * task.attempt }
