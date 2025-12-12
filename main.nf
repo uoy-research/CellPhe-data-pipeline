@@ -94,8 +94,7 @@ process save_tracking_config {
 
 
 process segmentation_qc {
-    container 'ghcr.io/uoy-research/cellphe-quarto:0.1.0'
-    // TODO update all cellphe images to latest version
+    container 'ghcr.io/uoy-research/cellphe-quarto:0.1.1'
     containerOptions '--env "XDG_CACHE_HOME=/tmp" --contain'
     publishDir "${seg_dir}/QC", mode: 'copy'
     time { 10.minute * task.attempt }
@@ -116,7 +115,7 @@ process segmentation_qc {
 }
 
 process track_images {
-    container 'ghcr.io/uoy-research/cellphe-trackmate:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-trackmate:0.1.1'
     containerOptions '-H /trackmate_libs'
     time { params.folder_names.image_type == 'HT2D' ? 240.minute * task.attempt : 40.minute * task.attempt }
     memory { params.folder_names.image_type == 'HT2D' ? 256.GB * task.attempt : 32.GB * task.attempt }
@@ -136,7 +135,7 @@ process track_images {
 }
 
 process tracking_qc {
-    container 'ghcr.io/uoy-research/cellphe-quarto:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-quarto:0.1.1'
     containerOptions '--env "XDG_CACHE_HOME=/tmp" --contain'
     publishDir "${track_dir}/QC", mode: 'copy'
     time { 10.minute * task.attempt }
@@ -157,7 +156,7 @@ process tracking_qc {
 }
 
 process parse_trackmate_xml {
-    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.1'
     publishDir "${trackmate_outputs_dir}", mode: 'copy'
     time { 20.minute * task.attempt }
     memory { 8.GB * task.attempt }
@@ -176,7 +175,7 @@ process parse_trackmate_xml {
 }
 
 process filter_size_and_observations {
-    container 'ghcr.io/uoy-research/cellphe-r:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-r:0.1.1'
     publishDir "${trackmate_outputs_dir}", mode: 'copy'
     time { 5.minute * task.attempt }
     memory { 8.GB * task.attempt }
@@ -205,7 +204,7 @@ process filter_size_and_observations {
 }
 
 process cellphe_frame_features_image {
-    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.1'
     time { params.folder_names.image_type == 'HT2D' ? 20.minute * task.attempt : 5.minute * task.attempt }
     memory { params.folder_names.image_type == 'HT2D' ? 128.GB * task.attempt : 16.GB * task.attempt }
 
@@ -224,7 +223,7 @@ process cellphe_frame_features_image {
 }
 
 process combine_frame_features {
-    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.1'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
 
@@ -241,7 +240,7 @@ process combine_frame_features {
 }
 
 process create_frame_summary_features {
-    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.1'
     publishDir "${cellphe_outputs_dir}", mode: 'copy'
     time { 15.minute * task.attempt }
     memory { 4.GB * task.attempt }
@@ -260,7 +259,7 @@ process create_frame_summary_features {
 }
 
 process cellphe_time_series_features {
-    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.1'
     publishDir "${cellphe_outputs_dir}", mode: 'copy'
     time { 30.minute * task.attempt }
     memory { 4.GB * task.attempt }
@@ -278,7 +277,7 @@ process cellphe_time_series_features {
 }
 
 process ome_get_global_t {
-    container 'ghcr.io/uoy-research/cellphe-xpath:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-xpath:0.1.1'
     label 'small'
 
     input:
@@ -294,7 +293,7 @@ process ome_get_global_t {
 }
 
 process ome_get_frame_t {
-    container 'ghcr.io/uoy-research/cellphe-xpath:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-xpath:0.1.1'
     label 'small'
 
     input:
@@ -310,7 +309,7 @@ process ome_get_frame_t {
 }
 
 process ome_get_filename {
-    container 'ghcr.io/uoy-research/cellphe-xpath:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-xpath:0.1.1'
     label 'small'
 
     input:
@@ -326,7 +325,7 @@ process ome_get_filename {
 }
 
 process split_ome_frames {
-    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.1'
     label 'small'
 
     input:
@@ -343,7 +342,7 @@ process split_ome_frames {
 }
 
 process remove_spaces {
-  container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
+  container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.1'
   label 'small'
 
   input:
@@ -360,7 +359,7 @@ process remove_spaces {
 }
 
 process rename_frames {
-    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.1'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
 
@@ -384,7 +383,7 @@ process rename_frames {
 }
 
 process split_stacked_tiff {
-    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.1'
     time { 5.minute * task.attempt }
     memory { 4.GB * task.attempt }
 
@@ -401,7 +400,7 @@ process split_stacked_tiff {
 }
 
 process create_tiff_stack {
-    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.1'
     publishDir "${processed_dir}", mode: 'move'
     time 30.minute
     memory 8.GB
@@ -419,7 +418,7 @@ process create_tiff_stack {
 }
 
 process convert_jpeg {
-    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.0'
+    container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.1'
     label 'small'
 
     input:
