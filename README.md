@@ -2,7 +2,7 @@
 
 TODO:
 
-  - Mention might need to set NXF_APPTAINER_CACHEDIR if `/tmp` doesn't have much space
+  - Mention might need to set APPTAINER_TMPDIR if `/tmp` doesn't have much space
   - Mention might want to specify memory for track_images in custom image.
 
 Runs a timelapse through the full CellPhe pipeline, including:
