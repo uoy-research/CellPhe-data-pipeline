@@ -23,7 +23,7 @@ cellphe_dir = "${track_dir}/cellphe"
 cellphe_outputs_dir = "${cellphe_dir}/${timelapse_id}"
 
 process segment_image {
-    container = 'biocontainers/cellpose:3.1.0_cv1'
+    container 'biocontainers/cellpose:3.1.0_cv1'
     publishDir "${mask_dir}", mode: 'copy'
     time { params.folder_names.image_type == 'HT2D' ? 20.minute * task.attempt : 5.minute * task.attempt }
     memory { params.folder_names.image_type == 'HT2D' ? 16.GB * task.attempt : 8.GB * task.attempt }
