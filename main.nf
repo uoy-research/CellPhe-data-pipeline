@@ -25,8 +25,6 @@ cellphe_outputs_dir = "${cellphe_dir}/${timelapse_id}"
 process segment_image {
     container 'biocontainers/cellpose:3.1.0_cv1'
     publishDir "${mask_dir}", mode: 'copy'
-    time { params.folder_names.image_type == 'HT2D' ? 20.minute * task.attempt : 5.minute * task.attempt }
-    memory { params.folder_names.image_type == 'HT2D' ? 16.GB * task.attempt : 8.GB * task.attempt }
 
     input:
     path input_fn
@@ -45,7 +43,6 @@ process segment_image_gpu {
     container 'biocontainers/cellpose:4.0.7_cv1'
     containerOptions '--nv'
     publishDir "${mask_dir}", mode: 'copy'
-    time { 30.minute * task.attempt }
 
     input:
     path files
@@ -97,8 +94,6 @@ process segmentation_qc {
     container 'ghcr.io/uoy-research/cellphe-quarto:0.1.1'
     containerOptions '--env "XDG_CACHE_HOME=/tmp" --contain'
     publishDir "${seg_dir}/QC", mode: 'copy'
-    time { 10.minute * task.attempt }
-    memory { 16.GB * task.attempt }
 
     input:
     path notebook
@@ -117,8 +112,6 @@ process segmentation_qc {
 process track_images {
     container 'ghcr.io/uoy-research/cellphe-trackmate:0.1.1'
     containerOptions '-H /trackmate_libs'
-    time { params.folder_names.image_type == 'HT2D' ? 240.minute * task.attempt : 40.minute * task.attempt }
-    memory { params.folder_names.image_type == 'HT2D' ? 256.GB * task.attempt : 32.GB * task.attempt }
 
     input:
     path mask_fns
@@ -138,8 +131,6 @@ process tracking_qc {
     container 'ghcr.io/uoy-research/cellphe-quarto:0.1.1'
     containerOptions '--env "XDG_CACHE_HOME=/tmp" --contain'
     publishDir "${track_dir}/QC", mode: 'copy'
-    time { 10.minute * task.attempt }
-    memory { 16.GB * task.attempt }
 
     input:
     path notebook
@@ -158,8 +149,6 @@ process tracking_qc {
 process parse_trackmate_xml {
     container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.1'
     publishDir "${trackmate_outputs_dir}", mode: 'copy'
-    time { 20.minute * task.attempt }
-    memory { 8.GB * task.attempt }
 
     input:
     path xml_file
@@ -177,8 +166,6 @@ process parse_trackmate_xml {
 process filter_size_and_observations {
     container 'ghcr.io/uoy-research/cellphe-r:0.1.1'
     publishDir "${trackmate_outputs_dir}", mode: 'copy'
-    time { 5.minute * task.attempt }
-    memory { 8.GB * task.attempt }
 
     input:
     path features_original
@@ -205,8 +192,6 @@ process filter_size_and_observations {
 
 process cellphe_frame_features_image {
     container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.1'
-    time { params.folder_names.image_type == 'HT2D' ? 20.minute * task.attempt : 5.minute * task.attempt }
-    memory { params.folder_names.image_type == 'HT2D' ? 128.GB * task.attempt : 16.GB * task.attempt }
 
     input:
     path image_fn
@@ -224,8 +209,6 @@ process cellphe_frame_features_image {
 
 process combine_frame_features {
     container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.1'
-    time { 5.minute * task.attempt }
-    memory { 4.GB * task.attempt }
 
     input:
     path input_fns
@@ -242,8 +225,6 @@ process combine_frame_features {
 process create_frame_summary_features {
     container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.1'
     publishDir "${cellphe_outputs_dir}", mode: 'copy'
-    time { 15.minute * task.attempt }
-    memory { 4.GB * task.attempt }
 
     input:
     path(frame_features_static) 
@@ -261,8 +242,6 @@ process create_frame_summary_features {
 process cellphe_time_series_features {
     container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.1'
     publishDir "${cellphe_outputs_dir}", mode: 'copy'
-    time { 30.minute * task.attempt }
-    memory { 4.GB * task.attempt }
 
     input:
     path(frame_features) 
@@ -360,8 +339,6 @@ process remove_spaces {
 
 process rename_frames {
     container 'ghcr.io/uoy-research/cellphe-cellphepy:0.1.1'
-    time { 5.minute * task.attempt }
-    memory { 4.GB * task.attempt }
 
     input:
     path in_files
@@ -384,8 +361,6 @@ process rename_frames {
 
 process split_stacked_tiff {
     container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.1'
-    time { 5.minute * task.attempt }
-    memory { 4.GB * task.attempt }
 
     input:
     path(stacked_tiff) 
@@ -402,8 +377,6 @@ process split_stacked_tiff {
 process create_tiff_stack {
     container 'ghcr.io/uoy-research/cellphe-linux-utils:0.1.1'
     publishDir "${processed_dir}", mode: 'move'
-    time 30.minute
-    memory 8.GB
 
     input:
     path(frames) 
