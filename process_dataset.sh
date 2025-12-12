@@ -28,9 +28,7 @@ LAUNCH_DIR="$EXPERIMENT_DIR_SCRATCH/.launch/${SITE}_${IMAGE}"
 # Load dependencies
 ml load Nextflow/23.10.0
 ml load Apptainer/latest
-source $PROJECT_DIR_LONGSHIP/venv/bin/activate
 export CELLPOSE_LOCAL_MODELS_PATH=$PROJECT_DIR_LONGSHIP/cellpose
-export PATH=$PATH:$PROJECT_DIR_LONGSHIP/bin/apache-maven-3.9.9/bin
 
 # Run pipeline from a directory specific to this timelapse
 mkdir -p $LAUNCH_DIR
