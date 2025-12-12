@@ -23,7 +23,7 @@ cellphe_dir = "${track_dir}/cellphe"
 cellphe_outputs_dir = "${cellphe_dir}/${timelapse_id}"
 
 process segment_image {
-    container 'biocontainers/cellpose:3.1.0_cv1'
+    container "${params.segmentation.image}"
     publishDir "${mask_dir}", mode: 'copy'
 
     input:
@@ -40,7 +40,7 @@ process segment_image {
 }
 
 process segment_image_gpu {
-    container 'biocontainers/cellpose:4.0.7_cv1'
+    container "${params.segmentation.image}"
     containerOptions '--nv'
     publishDir "${mask_dir}", mode: 'copy'
 

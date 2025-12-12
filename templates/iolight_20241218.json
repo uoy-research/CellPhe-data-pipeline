@@ -11,8 +11,10 @@
     "cellphe": true
   },
   "segmentation": {
+    "image": "biocontainers/cellpose:3.1.0_cv1",
     "model": {
-      "pretrained_model": "/mnt/scratch/projects/biol-imaging-2024/cellpose/CP_20241218_ioLight"
+      "pretrained_model": "/mnt/scratch/projects/biol-imaging-2024/cellpose/CP_20241218_ioLight",
+      "gpu": false
     },
     "eval": {
       "channels": [0,0]
