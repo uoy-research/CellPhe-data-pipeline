@@ -34,5 +34,5 @@ export CELLPOSE_LOCAL_MODELS_PATH=$PROJECT_DIR_LONGSHIP/cellpose
 mkdir -p $LAUNCH_DIR
 cd $LAUNCH_DIR
 export NXF_APPTAINER_CACHEDIR=$PROJECT_DIR_SCRATCH/apptainer_cache
-CMD="nextflow run $NEXTFLOW_FILE -work-dir .work --raw_dir $RAW_DATA_DIR --output_dir $EXPERIMENT_DIR_SCRATCH -params-file $CONFIG -ansi-log true -resume -with-tower"
+CMD="nextflow run $NEXTFLOW_FILE -profile york_viking -work-dir .work --raw_dir $RAW_DATA_DIR --output_dir $EXPERIMENT_DIR_SCRATCH -params-file $CONFIG -ansi-log true -resume -with-tower"
 eval $CMD
