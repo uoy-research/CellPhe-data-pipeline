@@ -1,7 +1,6 @@
 {
   "folder_names": {
-    "site": "",
-    "image_type": "",
+    "timelapse_id": "",
     "segmentation": "livecyte_phase_20250708",
     "tracking": "LAP_default"
   },

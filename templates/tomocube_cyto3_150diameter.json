@@ -1,7 +1,6 @@
 {
   "folder_names": {
-    "site": "",
-    "image_type": "HT2D",
+    "timelapse_id": "",
     "segmentation": "cyto3_diameter_150",
     "tracking": "LAP_default"
   },
