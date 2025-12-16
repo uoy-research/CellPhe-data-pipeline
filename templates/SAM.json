@@ -10,9 +10,9 @@
     "cellphe": true
   },
   "segmentation": {
-    "image": "biocontainers/cellpose:4.0.7_cv1",
+    "image": "ghcr.io/uoy-research/cellphe-cellpose4:0.1.1",
     "model": {
-      "pretrained_model": "/mnt/longship/projects/biol-imaging-2024/cellpose/cpsam",
+      "pretrained_model": "cpsam",
       "gpu": true
     },
     "eval": {

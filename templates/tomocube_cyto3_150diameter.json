@@ -10,7 +10,7 @@
     "cellphe": true
   },
   "segmentation": {
-    "image": "biocontainers/cellpose:3.1.0_cv1",
+    "image": "ghcr.io/uoy-research/cellphe-cellpose3:0.1.1",
     "model": {
       "model_type": "cyto3",
       "gpu": false
