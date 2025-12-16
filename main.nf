@@ -10,8 +10,7 @@ params.raw_dir = ''
 params.output_dir = ''
 
 // Folder paths
-// TODO cellpose models need to be baked into the Apptainer image?
-timelapse_id = ${params.folder_names.timelapse_id}
+timelapse_id = "${params.folder_names.timelapse_id}"
 processed_dir = "${params.output_dir}/processed"
 seg_dir = "${params.output_dir}/analysis/segmentation/${params.folder_names.segmentation}"
 mask_dir = "${seg_dir}/masks/${timelapse_id}"
