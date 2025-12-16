@@ -1,9 +1,22 @@
 #!/bin/bash
-# Main script to run the entire workflow. Must be run from research0.
-# Needs rclone setup with remotes CellPheViking and CellPheGDrive (if accessing datasets on Google Drive).
+# Runs the entire workflow for a single timelapse from raw data on bioldata or
+# Google Drive to cellphe features on bioldata.
+# NB: MUST BE RUN FROM RESEARCH0.
 #
-# NB: This script is currently designed to be run for a single timelapse,
-# i.e. one well and one imaging modality.
+# It performs the following steps:
+#   
+#   - Transfers raw data to Viking scratch
+#   - Prepares for the Nextflow pipeline execution
+#   - Runs the Nextflow pipeline on Viking
+#   - Transfers outputs to longship
+#   - Copies outputs from longship to bioldata
+#
+# Prequisites:
+# 
+# rclone setup with remotes CellPheViking and CellPheGDrive (if accessing 
+# datasets on Google Drive). 
+# All other prerequisites have been installed in the project folders on 
+# bioldata and longship as needed.
 #
 # Args:
 #   - 1: -b (optional). Whether to interpret the source as a bioldata folder. If not present assumes it is a GoogleDrive ID
@@ -12,7 +25,7 @@
 #   - 4: config: Config file providing pipeline parameters. Must be saved in the configs sub-directory of an Experiment
 
 print_usage() {
-    printf "Usage: run.sh GDRIVEID B2 /path/to/config.json OR run.sh -b /path/to/folder/on/bioldata B2 /path/to/config.json"
+    printf "Usage: run_pipeline_from_research0.sh GDRIVEID B2 /path/to/config.json OR run.sh -b /path/to/folder/on/bioldata B2 /path/to/config.json"
 }
 
 bioldata=false

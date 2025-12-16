@@ -1,14 +1,19 @@
 #!/bin/bash
-# Wrapper for the NextFlow job submission that sets the environment before running the job
+# run_pipeline_on_viking
+# ~~~~~~~~~~~~~~~~~~~~~~
+#
+# Wrapper for running the NextFlow pipeline on Viking sets up the environment 
+# and prepares pipeline arguments, before running.
+#
+# NB: THIS WILL ONLY RUN ON VIKING!
+#
 # Args:
 #   - 1: Config file
 
-# Get config with absolute path
+# Retrieve timelapse_id from config
 CONFIG=${1}
 CONFIG=$(realpath $CONFIG)
-# Parse config to get site and image
-SITE=$(jq -r .folder_names.site $CONFIG)
-IMAGE=$(jq -r .folder_names.image_type $CONFIG)
+TIMELAPSE_ID=$(jq -r .folder_names.timelapse_id $CONFIG)
 
 # Ensure clean environment
 ml purge
@@ -18,12 +23,12 @@ EXPERIMENT_PATH="$(dirname $(dirname ${CONFIG}))"
 EXPERIMENT="$(basename ${EXPERIMENT_PATH})"
 PROJECT_DIR_LONGSHIP="/mnt/longship/projects/biol-imaging-2024/"
 NEXTFLOW_FILE="$PROJECT_DIR_LONGSHIP/CellPhe-data-pipeline/main.nf"
-RAW_DATA_DIR="$EXPERIMENT_PATH/raw/${SITE}_${IMAGE}"
+RAW_DATA_DIR="$EXPERIMENT_PATH/raw/${TIMELAPSE_ID}"
 
 # Outputs
 PROJECT_DIR_SCRATCH="/mnt/scratch/projects/biol-imaging-2024/"
 EXPERIMENT_DIR_SCRATCH="$PROJECT_DIR_SCRATCH/Experiments/$EXPERIMENT"
-LAUNCH_DIR="$EXPERIMENT_DIR_SCRATCH/.launch/${SITE}_${IMAGE}"
+LAUNCH_DIR="$EXPERIMENT_DIR_SCRATCH/.launch/${TIMELAPSE_ID}"
 
 # Load dependencies
 ml load Nextflow/23.10.0
