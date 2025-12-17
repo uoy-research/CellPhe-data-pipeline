@@ -1,11 +1,6 @@
-# CellPhe Data Pipeline
+# CellPhe Pipeline
 
-TODO:
-
-  - Mention might need to set APPTAINER_TMPDIR if `/tmp` doesn't have much space
-  - Mention might want to specify memory for track_images in custom image.
-
-Runs a timelapse through the full CellPhe pipeline, including:
+This Nextflow pipeline runs a cell timelapse through the full CellPhe pipeline, including:
 
   - Image processing
   - Segmentation
@@ -14,25 +9,142 @@ Runs a timelapse through the full CellPhe pipeline, including:
   - Time-series feature extraction
   - QC report generation
 
-This is run using `Nextflow` which provides several useful features:
+Nextflow provides several advantages over doing all this in Python through the [`CellPhe`](https://pypi.org/project/cellphe/) package:
 
-  - Submits jobs to Slurm without having to write any submission scripts
-  - Can resume failed pipelines from the previous succesfully completed step
-  - Can automatically send emails upon completion/failure
+  - Makes the pipeline structure explicit, both in code and also in the progress log
+  - Modular design makes it easy to extend and modify
+  - Uses containers for each step allowing for full reproducibility, as well as not having to manage dependencies
+  - Can resume failed pipelines from previously cached steps
+  - Integrates seamlessly with High Performance Computing clusters (HPC)
 
-# Prerequisites
+## Prequisites
+
+Because the actual pipeline steps are run in containers, there is a minimal set of dependencies - just Nextflow itself and Apptainer to run the containers.
+Install Nextflow following the [instructions on its website](https://www.nextflow.io/docs/latest/install.html), although if you're on Windows you'll have a few extra steps to setup WSL as outlined in [a Nextflow blogpost](https://seqera.io/blog/setup-nextflow-on-windows/) (although ignore the Docker and VS Code sections).
+
+Apptainer is used to run the containers instead of Docker for one key reason, namely that Docker isn't typically allowed on HPC due to needing elevated access.
+Installation follows the (very thorough) [guide](https://apptainer.org/docs/admin/main/installation.html) on the Apptainer website.
+The easiest way to install it for Windows users is to use WSL again and install it following the [Ubuntu instructions](https://apptainer.org/docs/admin/main/installation.html#install-ubuntu-packages), while Mac users can install it [via Lima](https://apptainer.org/docs/admin/main/installation.html#mac).
+
+Although these two dependencies can be awkward to install, once they are available on your system, everything else will be brought in via containers as needed.
+
+## Usage
+
+Three things are needed to run the full CellPhe pipeline:
+
+  - A folder containing a timelapse
+  - A file containing parameters
+  - A location where the outputs can be saved to
+
+### Images
+
+The folder containing the timelapse should only have image files related to that timelapse. The image files themselves can be TIFFs (regular or multi-page), JPGs, or OME.TIFFs. They should be named such that their filename provides a natural ordering, e.g. `image_1.tiff`, `image_2.tiff`, etc... or `image_20250101_1200.tiff`, `image_20250101_1300.tiff`, etc...
+The full list of permitted file extensions is tif, tiff, TIF, TIFF, jpg, jpeg, JPG, JPEG, ome.companion.
+
+### Output folder
+
+The location where the outputs will be saved to doesn't need to exist yet.
+
+### Parameters file
+
+The parameters file is a JSON file containing parameters for every step of the pipeline. Examples are shown in the `templates` folder, where `cyto3.json` is a good example to start with as it uses CellPose 3 for segmentation with the general purpose `cyto3` inbuilt model.
+**The only parameter that must be changed is the folder_names -> timelapse_id field**, which is left blank in the templates. This field should describe the timelapse and might include the well, the imaging modality, the date, the microscope, etc...
+Other parameters that might need changing for your timelapse, particularly if it is short, are in the `QC` section. `minimum_observations` is the number of frames a cell must be tracked across - **if your dataset contains fewer than 50 frames this must be lowered to e.g. 10.**
+Make a copy of the template and modify it as needed.
+For further details about all the possible options, read on.
+
+#### folder\_names
+
+This section controls the folder names as they will appear in the output folder. This is useful if you are running the same timelapse through different segmentation and/or tracking options.
+
+### run
+
+These options govern which parts of the pipeline to run. E.g. if `"cellphe": false`, then the CellPhe features won't be generated. The order is significant too - if segmentation isn't run then it doesn't matter what `tracking` and `cellphe` are set to as the pipeline will terminate before it reaches those points.
+
+### segmentation
+
+This section controls the segmentation, which is run using [cellpose](https://cellpose.readthedocs.io/en/latest/). The `image` option specifies which of the [2 cellpose images](https://github.com/orgs/uoy-research/packages?repo_name=cellphe-pipeline-images) to use: cellpose3 or cellpose4. Normally the latest version of a software library is always preferred, but in this instance cellpose4 uses a completely different neural network architecture that makes it only computationally feasible on GPU. It is for this reason that all the templates default to cellpose 3 instead.
+The `model` object gets passed straight into the [`CellposeModel` class](https://cellpose.readthedocs.io/en/latest/api.html#cellpose.models.CellposeModel), while the `eval` options are passed into its [`eval` method](https://cellpose.readthedocs.io/en/latest/api.html#id0), which starts the segmentation process. Refer to the linked cellpose documentation for all possible options.
+
+### tracking
+
+The `tracking` section configures [Trackmate](https://imagej.net/plugins/trackmate/), which performs the tracking.
+`algorithm` details which of the Trackmate algorithms to use, with possible options:
+
+  - SimpleSparseLAP
+  - SparseLAP
+  - Kalman
+  - AdvancedKalman
+  - NearestNeighbor
+  - Overlap
+
+`settings` is a JSON object that gets passed into Trackmate, with the possible options dependent upon the tracking algorithm itself. There isn't an API for Trackmate, so the simplest (but still not that simple) way to identify the possible options for a given tracking algorithm is to run Trackmate in the ImageJ GUI, choose the tracking algorithm and try to cross refence the possible options that are offered with the [variable names in the source code](https://github.com/trackmate-sc/TrackMate/blob/master/src/main/java/fiji/plugin/trackmate/tracking/TrackerKeys.java).
+The default values provided in the templates work well in a variety of datasets.
+
+### QC
+
+The `QC` section provides options for quality control after the tracking. In particular, it removes cells from the dataset that are either below the `minimum_cell_size` or do not appear in at least `minimum_observations` frames. As mentioned above, this value needs to be smaller than your timelapse length otherwise. `segmentation_highlight` is either `fill` or `outline` and controls how the segmentation masks are overlaid on the images in the segmentation QC reports.
+
+### Running the pipeline
+
+Once a parameter file has been prepared, the pipeline can be run as follows:
+
+`nextflow run uoy-research/cellphe-data-pipeline --raw_dir /path/to/raw/dir --output_dir /path/to/output -params-file /path/to/params.json`
+
+This will run each step locally on your PC. Nextflow will attempt to run processes in parallel where possible, i.e. if you have 8 cores available it will try and run maybe 6 frames for segmentation at a time. This is another benefit over running everything in Python where you would have to do this manually.
+
+## Configuration
+
+The parameters control the **behaviour of each step of the pipeline**. It is mandatory and has no defaults. However, Nextflow pipelines have another set of properties that instead dictate the **pipeline infrastructure**. These are referred to as the "configuration" and do have defaults. The default configuration for this pipeline is stored in `nextflow.config` in this repo and sets up 2 profiles: a basic default profile that runs locally, and a much more involved configuration for a profile that is designed to run specifically on the University of York's Viking HPC. This profile does things like sets up resource requirements for each step (as this is required information for the HPC scheduler) and creates HPC-specific environment variables.
+
+When you run the pipeline on your machine by default it will try to run everything locally with no resource limits. If you have an HPC or cloud backend instead, or have specific environment needs, these can be set by creating a config file and passing it to the `nextflow run` command.
+The [Nextflow docs](https://www.nextflow.io/docs/latest/config.html) describe the config file syntax, which is a DSL written in Groovy.
+
+For example, you might find that Trackmate is running out of memory, in which case it can be increased by creating a config file called `custom.config` with the following contents. Then when you run the pipeline, pass in this config file with `-c` i.e. 
+`nextflow run uoy-research/cellphe-data-pipeline --raw_dir /path/to/raw/dir --output_dir /path/to/output -params-file /path/to/params.json -c custom.config`
+
+```
+process {
+    withName: track_images {
+      memory = 16.GB
+    }
+}
+```
+
+Alternatively, you might want to allow the containers that run each process to have access to a filepath that isn't mounted by Apptainer by default, and then use this path to cache CellPose models. The config that would achieve this is as follows:
+
+```
+process {
+    withName: segment_image {
+        containerOptions = '--bind /path/to/host:/mnt/cellpose --env "CELLPOSE_LOCAL_MODELS_PATH=/mnt/cellpose"'
+    }
+}
+```
+
+Refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest/config.html) and the `nextflow.config` in this repo for more ideas, especially if you are trying to run the pipeline on your own HPC or Cloud setup.
+
+## Checkpointing / resuming previous runs
+
+Nextflow keeps a cache of every step that has been executed so that if you were to rerun a pipeline that had already successfully complete some of the steps before, it would be able to resume where it left off. For example, if you had run a pipeline with segmentation model cyto3 and tracking algorithm SimpleLAP successfully, but now you want to run Sparse LAP instead, if you added `-resume` to the `nextflow run` command, Nextflow won't need to rerun the segmentation and can jump straight to the tracking.
+See the [docs](https://www.nextflow.io/docs/latest/cache-and-resume.html) for full details of how this works.
+
+# Running on University of York HPC
+
+For University of York users, here follows a brief guide on running the pipeline on the University's infrastructure, including our HPC (Viking) and network share.
+
+## Prerequisites
 
   1. Mapping bioldata network share
   2. Ensuring access to `research0`
   3. Ensuring access to `Viking`
   4. Adding public/private key authentication
 
-## Mapping bioldata network share
+### Mapping bioldata network share
 
 To be able to access the CellPhe folder on your personal computer,  map the `bioldata` network drive following the instructions on the [University's documentation](https://support.york.ac.uk/s/article/Filestore-How-to-map-a-drive-Windows), using the path `\\storage.its.york.ac.uk\bioldata\bl-cellphe`.
 **NB: you'll need to either be wired onto the campus network or connected to the VPN to connect to the network drive**.
 
-## Ensuring access to `research0`
+### Ensuring access to `research0`
 
 `research0` is a powerful Linux computer that resides on Campus that can be used for research purposes, typically executing long-running programs to free up your personal computer or to access licenced software.
 It is used for the data pipeline as it is on the fast campus connection to the Viking service and it means you don't need to leave your laptop running while the pipeline executes.
@@ -45,7 +157,7 @@ As shown below, this should ask for your password and then display a welcome mes
 
 If this doesn't work, follow the [documentation on the Wiki](https://uoy.atlassian.net/wiki/spaces/RCS/pages/39158543/Accessing+the+Servers).
 
-## Ensuring access to Viking
+### Ensuring access to Viking
 
 Unlike `research0`, access to Viking is granted upon request rather than by default.
 Ensure you have applied via [this form](https://docs.google.com/forms/d/e/1FAIpQLSfXkL10ypU6EQCBB2jS5oDwTpRMo77ppl7dvdbLnXm5zrKR7Q/viewform), with the Project Code `biol-imaging-2024`.
@@ -54,7 +166,7 @@ Once this has been granted, you can SSH into Viking in the same way as `research
 
 ![Connecting to Viking](docs/viking_access.png)
 
-## Adding public/private key authentication
+### Adding public/private key authentication
 
 The final step of preparation is to facilitate password-less SSH connection from `research0` to `Viking` so that the entire pipeline can be run without any user input.
 This is an alternative form of authentication to username & password which creates a pair of two 'keys', a public and a private.
@@ -75,7 +187,7 @@ Save this with Ctrl-O then Enter, then exit Nano with Ctrl-X.
 If you now disconnect from Viking (Ctrl-D) and try to reconnect, it should login you in using your SSH keys without needing your password.
 If this doesn't work, try again or ask for help in Slack.
 
-# Running the Pipeline
+## Running the Pipeline
 
 There are several steps involved in running the pipeline, which will be discussed in turn:
 
@@ -85,14 +197,14 @@ There are several steps involved in running the pipeline, which will be discusse
   - Navigating to the launch directory
   - Running the pipeline
 
-## Creating an Experiment folder
+### Creating an Experiment folder
 
 Each run of the microscope is termed an 'Experiment', and all of its raw and processed data is stored together in a folder in the 'Experiments' sub-folder in the network share.
 First check that there isn't an experiment folder for the dataset you are about to process by looking in the [Experiment Log](https://docs.google.com/spreadsheets/d/1BZNBhHIMR8uBYqgkM81DA0BgXtR4CElyHNOgvvTQre0/edit?gid=0#gid=0) and see if the 'Processed with CellPhe Pipeline' columns for either Phase or Brightfield are ticked.
 If they are, then the 'Experiment Name' folder will give the folder name to use.
 If not, create a new sub-folder in Experiments with a name following the convention `<date>_<name>_<cell_line>_<microscope>`, e.g. `20240317_dose_response_mcf7_livecyte` and add this to the Experiment Name column in the spreadsheet.
 
-## Identifying the timelapse
+### Identifying the timelapse
 
 An Experiment comprises a single run of the microscope, potentially generating multiple different timelapses, i.e. the LiveCyte is run on different wells simultaneously and outputs both phase and brightfield images.
 The pipeline is run for one timelapse at a time (although multiple timelapses can be run manually in parallel, more on that later).
@@ -108,7 +220,7 @@ This is obtained from the last part of the URL as shown below, and is `11rMHhF8f
 
 ![How to get the image folder ID](docs/getting_directory_id.png)
 
-## Creating a config file
+### Creating a config file
 
 Each pipeline run is governed by a large number of parameters for the segmentation, tracking, and CellPhe feature generation, which are provided in a separate config file per run.
 Typically, there are only two values that change run-to-run: the segmentation model used and the minimum number of frames that a cell must be observed in.
@@ -133,7 +245,7 @@ You can also change other values here, such as choosing which parts of the pipel
 You can also change the folder names for the segmentation and tracking sub-directories in `folder_names`, useful if you run the same timelapse through multiple segmentation or tracking parameters.
 And of course you can change the segmentation and tracking parameters themselves, as well as the minimum number of observations in the `QC` section.
 
-## Navigating to the launch directory
+### Navigating to the launch directory
 
 Despite running on Viking, the pipeline is launched from `research0`. 
 `research0` is used rather than a local PC for several reasons:
@@ -161,12 +273,12 @@ Change into the `CellPhe-data-pipeline` directory with (again tab-complete helps
 ```Shell
 sl561@research0:/shared/storage/bioldata/bl-cellphe$ cd CellPhe-data-pipeline/
 sl561@research0:/shared/storage/bioldata/bl-cellphe/CellPhe-data-pipeline$ ls
-bin  nextflow.config  process_dataset.nf  process_dataset.sh  README.md  run.sh
+bin  docs main.nf nextflow.config  Pipeline_guide.html  README.md  scripts templates
 ```
 
-## Starting a run
+### Starting a run
 
-`run.sh` is the pipeline launcher and it takes 3 arguments:
+`scripts/run_pipeline_from_research0.sh` is the pipeline launcher and it takes 3 arguments:
 
   1. ID of the folder on GoogleDrive containing the images
   2. A pattern matching the images
@@ -188,16 +300,16 @@ I.e. ioLight images are named `ioLight_20241110T133524_20241110T133531.JPG`, `io
 The arguments are separated by spaces, so the run command will be as below:
 NB: use tab-completion for the config path! And `../` means 'up a directory'.
 
-`./run.sh 11rMHhF8fWPutVpvdzdWZy2-14ompW8Wc C4_5_Phase ../Experiments/20240614_dr_dox_m231/configs/C4_5_Phase.json`
+`scripts/run_pipeline_from_research0.sh 11rMHhF8fWPutVpvdzdWZy2-14ompW8Wc C4_5_Phase ../Experiments/20240614_dr_dox_m231/configs/C4_5_Phase.json`
 
 Running this command starts the pipeline, which should now run without any further input until completion.
 
-## Execution
+### Execution
 
 The first step the pipeline takes is to copy the specified images (and the companion.ome file if present) over to Viking, which can take several minutes depending on the dataset size.
 
 ```Shell
-sl561@research0:/shared/storage/bioldata/bl-cellphe/CellPhe-data-pipeline$ ./run.sh 11rMHhF8fWPutVpvdzdWZy2-14ompW8Wc C4_5_Phase ../Experiments/20240614_dr_dox_m231/configs/C4_5_Phase.json
+sl561@research0:/shared/storage/bioldata/bl-cellphe/CellPhe-data-pipeline$ scripts/run_pipeline_from_research0.sh 11rMHhF8fWPutVpvdzdWZy2-14ompW8Wc C4_5_Phase ../Experiments/20240614_dr_dox_m231/configs/C4_5_Phase.json
 2025/01/21 09:18:04 INFO  : C4_5_Phase.companion.ome: Copied (new)
 2025/01/21 09:18:10 INFO  : C4_5_Phase_10.ome.tiff: Copied (new)
 2025/01/21 09:18:11 INFO  : C4_5_Phase_11.ome.tiff: Copied (new)
@@ -268,7 +380,7 @@ Transferred:         1480 / 1480, 100%
 Elapsed time:      4m27.2s
 ```
 
-## Resuming a previous run
+### Resuming a previous run
 
 Nextflow caches the outputs of previous runs, so that subsequent pipelines that use e.g. the same segmentation masks but different tracking algorithms, won't have to rerun the segmentation.
 Furthermore, the data won't need to be copied down from Google Drive again as it will be recognised as already being present.
@@ -276,9 +388,9 @@ Furthermore, the data won't need to be copied down from Google Drive again as it
 However, the only downside to this is that you **cannot run multiple pipelines simultaneously for the same timelapse**.
 So if you want to run 2 different tracking algorithms on the same raw images, you'll need to run the in series.
 
-## Error messages
+### Error messages
 
-### Retrying execution
+#### Retrying execution
 
 Occasionally you might encounter an error such as below.
 Not to worry, these jobs will be resubmitted to Viking but with additional resources (i.e. time and memory) so that they should successfully complete and it won't affect the overall pipeline.
@@ -287,13 +399,13 @@ Not to worry, these jobs will be resubmitted to Viking but with additional resou
 [40/e027a1] NOTE: Process `segment_image(20)` terminated with an error exit status (140) -- Execution is retried (1)
 ```
 
-# Tips
+## Tips
 
-## Tmux
+### Tmux
 
 If you are on an unstable connection, or just want the added security, you can run the pipeline from within a `tmux` session which means that if your connection to `research0` is lost then the pipeline won't terminate.
 Simply run `tmux` after connecting to `research0` - you can tell if this has worked because you will now have a green bar at the bottom of the terminal.
-You can now launch the pipeline in the same way as before by running the `./run.sh ...` command.
+You can now launch the pipeline in the same way as before by running the `scripts/run_pipeline_from_research0.sh ...` command.
 
 If your SSH connection is lost while the pipeline is running, you can reconnect to `research0` and run `tmux attach` and it will resume your last session with the pipeline still running.
 Or, if you simply want to close the connection (for example if you want to shutdown your laptop or disconnect it from the internet), you can exit the `tmux` session with Ctrl-B + D.
@@ -301,7 +413,7 @@ This will take you back into your shell session on `research0`, so you can now d
 As before, when you reconnect to `research0` you can run `tmux attach` to resume your session.
 To exit a `tmux` session (rather than just leaving it running in the background) press Ctrl-D.
 
-# Architecture
+## Architecture
 
 The pipeline involves several machines and data storage systems as laid out below.
 
