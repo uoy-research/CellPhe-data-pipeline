@@ -40,7 +40,7 @@ process segment_image {
 
 process segment_image_gpu {
     container "${params.segmentation.image}"
-    containerOptions '--nv'
+    containerOptions '--nv --env "NUMBA_CACHE_DIR=/tmp" --contain'
     publishDir "${mask_dir}", mode: 'copy'
 
     input:
