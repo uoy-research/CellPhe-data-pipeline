@@ -22,6 +22,7 @@ cellphe_outputs_dir = "${cellphe_dir}/${timelapse_id}"
 
 process segment_image {
     container "${params.segmentation.image}"
+    containerOptions '--env "NUMBA_CACHE_DIR=/tmp" --contain'
     publishDir "${mask_dir}", mode: 'copy'
 
     input:
