@@ -10,7 +10,7 @@
     "cellphe": true
   },
   "segmentation": {
-    "image": "ghcr.io/uoy-research/cellphe-cellpose3:0.1.1",
+    "image": "ghcr.io/uoy-research/cellphe-cellpose3:0.1.2",
     "model": {
       "pretrained_model": "/cellpose/CP_20250708LivecytePhase_27imgs",
       "gpu": false
