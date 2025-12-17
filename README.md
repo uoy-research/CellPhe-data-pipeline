@@ -11,30 +11,29 @@ This Nextflow pipeline runs a cell timelapse through the full CellPhe pipeline, 
 
 Nextflow provides several advantages over doing all this in Python through the [`CellPhe`](https://pypi.org/project/cellphe/) package:
 
-  - Makes the pipeline structure explicit, both in code and also in the progress log
-  - Modular design makes it easy to extend and modify
-  - Uses containers for each step allowing for full reproducibility, as well as not having to manage dependencies
-  - Can resume failed pipelines from previously cached steps
+  - Makes the pipeline structure explicit
+  - Modular design allows for easy extension and modification
+  - Each step is run in a container, facilitating full reproducibility as well as handling all dependencies
+  - Failed pipelines can be resumed from previously cached steps
   - Integrates seamlessly with High Performance Computing clusters (HPC)
 
 ## Prequisites
 
 Because the actual pipeline steps are run in containers, there is a minimal set of dependencies - just Nextflow itself and Apptainer to run the containers.
-Install Nextflow following the [instructions on its website](https://www.nextflow.io/docs/latest/install.html), although if you're on Windows you'll have a few extra steps to setup WSL as outlined in [a Nextflow blogpost](https://seqera.io/blog/setup-nextflow-on-windows/) (although ignore the Docker and VS Code sections).
+Install Nextflow following the [instructions on its website](https://www.nextflow.io/docs/latest/install.html), although if you're on Windows you'll have a few extra steps to setup WSL as outlined in [a Nextflow blogpost](https://seqera.io/blog/setup-nextflow-on-windows/) (ignore the Docker and VS Code sections).
 
-Apptainer is used to run the containers instead of Docker for one key reason, namely that Docker isn't typically allowed on HPC due to needing elevated access.
-Installation follows the (very thorough) [guide](https://apptainer.org/docs/admin/main/installation.html) on the Apptainer website.
-The easiest way to install it for Windows users is to use WSL again and install it following the [Ubuntu instructions](https://apptainer.org/docs/admin/main/installation.html#install-ubuntu-packages), while Mac users can install it [via Lima](https://apptainer.org/docs/admin/main/installation.html#mac).
+Apptainer is used to run the containers instead of Docker for one key reason, namely that Docker isn't typically allowed on HPC due to it requiring elevated access.
+Installation follows the (very thorough) [guide](https://apptainer.org/docs/admin/main/installation.html) on the Apptainer website, but put simply the easiest way to install it for Windows users is to use WSL again and follow the [Ubuntu instructions](https://apptainer.org/docs/admin/main/installation.html#install-ubuntu-packages), while Mac users can install it [via Lima](https://apptainer.org/docs/admin/main/installation.html#mac).
 
-Although these two dependencies can be awkward to install, once they are available on your system, everything else will be brought in via containers as needed.
+Although these two dependencies can be awkward to install, once they are available on your system everything else will be brought in via containers as needed.
 
-## Usage
+## Pipeline arguments
 
 Three things are needed to run the full CellPhe pipeline:
 
-  - A folder containing a timelapse
-  - A file containing parameters
-  - A location where the outputs can be saved to
+  1. A folder containing a timelapse
+  2. A parameters file
+  3. A location where the outputs can be saved to
 
 ### Images
 
@@ -47,26 +46,28 @@ The location where the outputs will be saved to doesn't need to exist yet.
 
 ### Parameters file
 
-The parameters file is a JSON file containing parameters for every step of the pipeline. Examples are shown in the `templates` folder, where `cyto3.json` is a good example to start with as it uses CellPose 3 for segmentation with the general purpose `cyto3` inbuilt model.
-**The only parameter that must be changed is the folder_names -> timelapse_id field**, which is left blank in the templates. This field should describe the timelapse and might include the well, the imaging modality, the date, the microscope, etc...
+The parameters file is a JSON file that stores options for every step of the pipeline. Examples are shown in the `templates` folder - with `cyto3.json` being a good starting point as it uses the general purpose `cyto3` inbuilt model.
+
+**The only parameter that must be changed is the folder_names -> timelapse_id field**, which is left blank in the templates. This field should concisely describe the timelapse and might include the well, the imaging modality, the date, the microscope, etc...
 Other parameters that might need changing for your timelapse, particularly if it is short, are in the `QC` section. `minimum_observations` is the number of frames a cell must be tracked across - **if your dataset contains fewer than 50 frames this must be lowered to e.g. 10.**
 Make a copy of the template and modify it as needed.
-For further details about all the possible options, read on.
+
+If you want to jump straight into running the pipeline, skip to the [next section](https://github.com/uoy-research/CellPhe-data-pipeline/tree/feature/local-profile#running-the-pipeline), otherwise read on for a full description of the parameter file.
 
 #### folder\_names
 
 This section controls the folder names as they will appear in the output folder. This is useful if you are running the same timelapse through different segmentation and/or tracking options.
 
-### run
+#### run
 
 These options govern which parts of the pipeline to run. E.g. if `"cellphe": false`, then the CellPhe features won't be generated. The order is significant too - if segmentation isn't run then it doesn't matter what `tracking` and `cellphe` are set to as the pipeline will terminate before it reaches those points.
 
-### segmentation
+#### segmentation
 
 This section controls the segmentation, which is run using [cellpose](https://cellpose.readthedocs.io/en/latest/). The `image` option specifies which of the [2 cellpose images](https://github.com/orgs/uoy-research/packages?repo_name=cellphe-pipeline-images) to use: cellpose3 or cellpose4. Normally the latest version of a software library is always preferred, but in this instance cellpose4 uses a completely different neural network architecture that makes it only computationally feasible on GPU. It is for this reason that all the templates default to cellpose 3 instead.
-The `model` object gets passed straight into the [`CellposeModel` class](https://cellpose.readthedocs.io/en/latest/api.html#cellpose.models.CellposeModel), while the `eval` options are passed into its [`eval` method](https://cellpose.readthedocs.io/en/latest/api.html#id0), which starts the segmentation process. Refer to the linked cellpose documentation for all possible options.
+The `model` config section gets passed straight into the [`CellposeModel` class](https://cellpose.readthedocs.io/en/latest/api.html#cellpose.models.CellposeModel), while the `eval` options are passed into its [`eval` method](https://cellpose.readthedocs.io/en/latest/api.html#id0), which starts the segmentation process. Refer to the linked cellpose documentation for all possible options.
 
-### tracking
+#### tracking
 
 The `tracking` section configures [Trackmate](https://imagej.net/plugins/trackmate/), which performs the tracking.
 `algorithm` details which of the Trackmate algorithms to use, with possible options:
@@ -81,11 +82,11 @@ The `tracking` section configures [Trackmate](https://imagej.net/plugins/trackma
 `settings` is a JSON object that gets passed into Trackmate, with the possible options dependent upon the tracking algorithm itself. There isn't an API for Trackmate, so the simplest (but still not that simple) way to identify the possible options for a given tracking algorithm is to run Trackmate in the ImageJ GUI, choose the tracking algorithm and try to cross refence the possible options that are offered with the [variable names in the source code](https://github.com/trackmate-sc/TrackMate/blob/master/src/main/java/fiji/plugin/trackmate/tracking/TrackerKeys.java).
 The default values provided in the templates work well in a variety of datasets.
 
-### QC
+#### QC
 
-The `QC` section provides options for quality control after the tracking. In particular, it removes cells from the dataset that are either below the `minimum_cell_size` or do not appear in at least `minimum_observations` frames. As mentioned above, this value needs to be smaller than your timelapse length otherwise. `segmentation_highlight` is either `fill` or `outline` and controls how the segmentation masks are overlaid on the images in the segmentation QC reports.
+The `QC` section provides options for quality control after the tracking. In particular, it removes cells from the dataset that are either below the `minimum_cell_size` or do not appear in at least `minimum_observations` frames. As mentioned above, this value needs to be smaller than your timelapse length. `segmentation_highlight` takes values `fill` or `outline` and controls how the segmentation masks are overlaid on the images in the segmentation QC reports.
 
-### Running the pipeline
+## Running the pipeline
 
 Once a parameter file has been prepared, the pipeline can be run as follows:
 
@@ -95,7 +96,7 @@ This will run each step locally on your PC. Nextflow will attempt to run process
 
 ## Configuration
 
-The parameters control the **behaviour of each step of the pipeline**. It is mandatory and has no defaults. However, Nextflow pipelines have another set of properties that instead dictate the **pipeline infrastructure**. These are referred to as the "configuration" and do have defaults. The default configuration for this pipeline is stored in `nextflow.config` in this repo and sets up 2 profiles: a basic default profile that runs locally, and a much more involved configuration for a profile that is designed to run specifically on the University of York's Viking HPC. This profile does things like sets up resource requirements for each step (as this is required information for the HPC scheduler) and creates HPC-specific environment variables.
+The parameters described above control the **pipeline's behaviour**. They are mandatory and have no defaults. However, Nextflow pipelines have another set of properties that instead dictate the **pipeline infrastructure**. These are referred to as the "configuration" and do have defaults. The default configuration for this pipeline is stored in `nextflow.config` in this repo and sets up 2 profiles: a basic default profile that runs locally, and a much more involved configuration for a profile that is designed to run specifically on the University of York's Viking HPC. This profile does things like sets up resource requirements for each step (as this is required information for the HPC scheduler) and creates HPC-specific environment variables.
 
 When you run the pipeline on your machine by default it will try to run everything locally with no resource limits. If you have an HPC or cloud backend instead, or have specific environment needs, these can be set by creating a config file and passing it to the `nextflow run` command.
 The [Nextflow docs](https://www.nextflow.io/docs/latest/config.html) describe the config file syntax, which is a DSL written in Groovy.
@@ -106,12 +107,12 @@ For example, you might find that Trackmate is running out of memory, in which ca
 ```
 process {
     withName: track_images {
-      memory = 16.GB
+        memory = 16.GB
     }
 }
 ```
 
-Alternatively, you might want to allow the containers that run each process to have access to a filepath that isn't mounted by Apptainer by default, and then use this path to cache CellPose models. The config that would achieve this is as follows:
+Alternatively, you might want to allow the containers that run each process to have access to a filepath that isn't mounted by Apptainer by default, and then use this location to cache CellPose models.
 
 ```
 process {
@@ -121,11 +122,11 @@ process {
 }
 ```
 
-Refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest/config.html) and the `nextflow.config` in this repo for more ideas, especially if you are trying to run the pipeline on your own HPC or Cloud setup.
+Refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest/config.html) and `nextflow.config` in this repo for more ideas, especially if you are trying to run the pipeline on your own HPC or Cloud setup.
 
 ## Checkpointing / resuming previous runs
 
-Nextflow keeps a cache of every step that has been executed so that if you were to rerun a pipeline that had already successfully complete some of the steps before, it would be able to resume where it left off. For example, if you had run a pipeline with segmentation model cyto3 and tracking algorithm SimpleLAP successfully, but now you want to run Sparse LAP instead, if you added `-resume` to the `nextflow run` command, Nextflow won't need to rerun the segmentation and can jump straight to the tracking.
+Nextflow keeps a cache of every step that has been executed allowing for the resumption of partially completed runs. For example, if you had run a pipeline with segmentation model cyto3 and tracking algorithm SimpleLAP successfully, but now you want to run Sparse LAP instead, if you added `-resume` to the `nextflow run` command, Nextflow won't need to rerun the segmentation and can jump straight to the tracking.
 See the [docs](https://www.nextflow.io/docs/latest/cache-and-resume.html) for full details of how this works.
 
 # Running on University of York HPC
