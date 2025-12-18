@@ -125,13 +125,13 @@ The location where the outputs will be saved to doesn't need to exist yet.
 
 ### Parameters file
 
-The parameters file is a JSON file that stores options for every step of the pipeline. Examples are shown in the `templates` folder - with `cyto3.json` being a good starting point as it uses the general purpose `cyto3` inbuilt model.
+The parameters file is a JSON file that stores options for every step of the pipeline. Examples are shown in the `templates` folder - with `cyto3.json` being a good starting point as it uses the general purpose `cyto3` model that comes with CellPose.
 
 **The only parameter that must be changed is the folder_names -> timelapse_id field**, which is left blank in the templates. This field should concisely describe the timelapse and might include the well, the imaging modality, the date, the microscope, etc...
 Other parameters that might need changing for your timelapse, particularly if it is short, are in the `QC` section. `minimum_observations` is the number of frames a cell must be tracked across - **if your dataset contains fewer than 50 frames this must be lowered to e.g. 10.**
 Make a copy of the template and modify it as needed.
 
-If you want to jump straight into running the pipeline, skip to the [next section](https://github.com/uoy-research/CellPhe-data-pipeline/tree/feature/local-profile#running-the-pipeline), otherwise read on for a full description of the parameter file.
+If you want to jump straight into running the pipeline, skip to the [next section](https://github.com/uoy-research/CellPhe-data-pipeline?tab=readme-ov-file#running-the-pipeline), otherwise read on for a full description of the parameter file.
 
 #### folder\_names
 
@@ -171,11 +171,11 @@ Once a parameter file has been prepared, the pipeline can be run as follows:
 
 `nextflow run uoy-research/cellphe-data-pipeline --raw_dir /path/to/raw/dir --output_dir /path/to/output -params-file /path/to/params.json`
 
-This will run each step locally on your PC. Nextflow will attempt to run processes in parallel where possible, i.e. if you have 8 cores available it will try and run maybe 6 frames for segmentation at a time. This is another benefit over running everything in Python where you would have to do this manually.
+This will run each step locally on your PC. Nextflow will attempt to run processes in parallel where possible, i.e. if you have 8 cores available it will try and segment 8 images simultaneously. This is another benefit over running everything in Python where you would have to do this manually. NB: this behaviour can be changed using a custom configuration as described in the following section.
 
 ## Configuration
 
-The parameters described above control the **pipeline's behaviour**. They are mandatory and have no defaults. However, Nextflow pipelines have another set of properties that instead dictate the **pipeline infrastructure**. These are referred to as the "configuration" and are optional. The default configuration for this pipeline is stored in `nextflow.config` in this repo and sets up 2 profiles: a basic default profile that runs locally, and a much more involved configuration for a profile that is designed to run specifically on the University of York's Viking HPC. This profile does things like sets up resource requirements for each step (as this is required information for the HPC scheduler) and creates HPC-specific environment variables.
+The parameter file described [above](https://github.com/uoy-research/CellPhe-data-pipeline?tab=readme-ov-file#parameters-file) controls the **pipeline's behaviour**. It is mandatory and has no defaults. However, Nextflow pipelines have another set of properties that instead dictate the **pipeline infrastructure**. These are referred to as the "configuration" and are optional. The default configuration for this pipeline is stored in `nextflow.config` in this repo and sets up 2 profiles: a basic default profile that runs locally, and a much more involved configuration for a profile that is designed to run specifically on the University of York's Viking HPC. This latter profile does things like sets up resource requirements for each step (as this is required information for the HPC scheduler) and creates HPC-specific environment variables.
 
 When you run the pipeline on your machine by default it will try to run everything locally with no resource limits. If you have an HPC or cloud backend instead, or have specific environment needs, these can be set by creating a config file and passing it to the `nextflow run` command.
 The [Nextflow docs](https://www.nextflow.io/docs/latest/config.html) describe the config file syntax, which is a DSL written in Groovy.
@@ -191,7 +191,7 @@ process {
 }
 ```
 
-Alternatively, you might want to allow the containers that run each process to have access to a filepath that isn't mounted by Apptainer by default, and then use this location to cache CellPose models.
+Alternatively, you might want to cache CellPose models in a host folder location that isn't mounted by default by Apptainer. The config snippet below firstly binds the host path into the container and secondly sets a CellPose environmnent variable that provides the model cache location.
 
 ```
 process {
@@ -205,8 +205,11 @@ Refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest/config
 
 ## Checkpointing / resuming previous runs
 
-Nextflow keeps a cache of every step that has been executed allowing for the resumption of partially completed runs. For example, if you had run a pipeline with segmentation model cyto3 and tracking algorithm SimpleLAP successfully, but now you want to run Sparse LAP instead, if you added `-resume` to the `nextflow run` command, Nextflow won't need to rerun the segmentation and can jump straight to the tracking.
-See the [docs](https://www.nextflow.io/docs/latest/cache-and-resume.html) for full details of how this works.
+Nextflow keeps a cache of every step that has been executed allowing for the resumption of partially completed runs. For example, if you had a run that failed at the tracking stage due to not having sufficient memory assigned, you could rerun the pipeline (after increasing the memory as described [above](https://github.com/uoy-research/CellPhe-data-pipeline?tab=readme-ov-file#configuration)) by adding `-resume` to the `nextflow run` command which then use the cached outputs from earlier steps and jump straight to running tracking.
+
+This feature isn't just useful for failed runs. If you had a successful pipeline run segmentation model cyto3 and tracking algorithm SimpleLAP but now you wanted to try Sparse LAP tracking instead, adding `-resume` would use the cached segmentation results.
+
+See the [Nextflow docs](https://www.nextflow.io/docs/latest/cache-and-resume.html) for full details of how this works.
 
 # Running on University of York HPC
 
