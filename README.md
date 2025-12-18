@@ -12,72 +12,80 @@ This Nextflow pipeline runs a cell timelapse through the full CellPhe pipeline, 
 ```mermaid
 flowchart TB
     subgraph " "
-    v0["Raw Images"]
-    v7["Segmentation Config"]
-    v13["Segmentation Notebook"]
-    v16["Tracking Config"]
-    v22["Segmentation Notebook"]
+    v0["ome.companion file"]
+    v22["Segmentation Config"]
+    v31["Tracking Config"]
     end
-    v2([remove_spaces])
-    v5([rename_frames])
-    v8([save_segmentation_config])
+    v1([ome_get_filename])
+    v6([ome_get_frame_t])
+    v10([ome_get_global_t])
+    v15([split_ome_frames])
+    v17([remove_spaces])
+    v20([rename_frames])
+    v23([save_segmentation_config])
     subgraph " "
-    v9[" "]
-    v15[" "]
-    v18[" "]
     v24[" "]
     v30[" "]
     v33[" "]
+    v39[" "]
+    v45[" "]
+    v48[" "]
     end
-    v10([segment_image])
-    v14([segmentation_qc])
-    v17([save_tracking_config])
-    v19([track_images])
-    v20([parse_trackmate_xml])
-    v21([filter_size_and_observations])
-    v23([tracking_qc])
-    v25([cellphe_frame_features_image])
-    v27([combine_frame_features])
-    v28([create_frame_summary_features])
-    v29([cellphe_time_series_features])
-    v32([create_tiff_stack])
-    v1(( ))
-    v6(( ))
-    v11(( ))
+    v25([segment_image])
+    v29([segmentation_qc])
+    v32([save_tracking_config])
+    v34([track_images])
+    v35([parse_trackmate_xml])
+    v36([filter_size_and_observations])
+    v38([tracking_qc])
+    v40([cellphe_frame_features_image])
+    v42([combine_frame_features])
+    v43([create_frame_summary_features])
+    v44([cellphe_time_series_features])
+    v47([create_tiff_stack])
+    v2(( ))
+    v16(( ))
+    v21(( ))
     v26(( ))
+    v41(( ))
     v0 --> v1
     v1 --> v2
-    v2 --> v1
-    v1 --> v5
-    v5 --> v6
-    v7 --> v8
-    v8 --> v9
-    v6 --> v10
-    v10 --> v11
-    v13 --> v14
-    v6 --> v14
-    v11 --> v14
-    v14 --> v15
+    v0 --> v6
+    v6 --> v2
+    v0 --> v10
+    v10 --> v2
+    v2 --> v15
+    v15 --> v16
     v16 --> v17
-    v17 --> v18
-    v11 --> v19
-    v19 --> v20
-    v20 --> v25
+    v17 --> v16
+    v16 --> v20
     v20 --> v21
-    v20 --> v23
-    v21 --> v23
-    v21 --> v25
-    v21 --> v28
     v22 --> v23
     v23 --> v24
-    v6 --> v25
+    v21 --> v25
     v25 --> v26
-    v26 --> v27
-    v27 --> v28
-    v28 --> v29
+    v21 --> v29
+    v26 --> v29
     v29 --> v30
-    v6 --> v32
+    v31 --> v32
     v32 --> v33
+    v26 --> v34
+    v34 --> v35
+    v35 --> v40
+    v35 --> v36
+    v35 --> v38
+    v36 --> v38
+    v36 --> v40
+    v36 --> v43
+    v38 --> v39
+    v21 --> v40
+    v40 --> v41
+    v41 --> v42
+    v42 --> v43
+    v43 --> v44
+    v44 --> v45
+    v21 --> v47
+    v47 --> v48
 ```
 
 Nextflow provides several advantages over doing all this in Python through the [`CellPhe`](https://pypi.org/project/cellphe/) package:
