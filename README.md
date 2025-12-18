@@ -131,7 +131,7 @@ The parameters file is a JSON file that stores options for every step of the pip
 Other parameters that might need changing for your timelapse, particularly if it is short, are in the `QC` section. `minimum_observations` is the number of frames a cell must be tracked across - **if your dataset contains fewer than 50 frames this must be lowered to e.g. 10.**
 Make a copy of the template and modify it as needed.
 
-If you want to jump straight into running the pipeline, skip to the [next section](https://github.com/uoy-research/CellPhe-data-pipeline?tab=readme-ov-file#running-the-pipeline), otherwise read on for a full description of the parameter file.
+If you want to jump straight into running the pipeline, skip to the [next section](#running-the-pipeline), otherwise read on for a full description of the parameter file.
 
 #### folder\_names
 
@@ -175,7 +175,7 @@ This will run each step locally on your PC. Nextflow will attempt to run process
 
 ## Configuration
 
-The parameter file described [above](https://github.com/uoy-research/CellPhe-data-pipeline?tab=readme-ov-file#parameters-file) controls the **pipeline's behaviour**. It is mandatory and has no defaults. However, Nextflow pipelines have another set of properties that instead dictate the **pipeline infrastructure**. These are referred to as the "configuration" and are optional. The default configuration for this pipeline is stored in `nextflow.config` in this repo and sets up 2 profiles: a basic default profile that runs locally, and a much more involved configuration for a profile that is designed to run specifically on the University of York's Viking HPC. This latter profile does things like sets up resource requirements for each step (as this is required information for the HPC scheduler) and creates HPC-specific environment variables.
+The parameter file described [above](#parameters-file) controls the **pipeline's behaviour**. It is mandatory and has no defaults. However, Nextflow pipelines have another set of properties that instead dictate the **pipeline infrastructure**. These are referred to as the "configuration" and are optional. The default configuration for this pipeline is stored in `nextflow.config` in this repo and sets up 2 profiles: a basic default profile that runs locally, and a much more involved configuration for a profile that is designed to run specifically on the University of York's Viking HPC. This latter profile does things like sets up resource requirements for each step (as this is required information for the HPC scheduler) and creates HPC-specific environment variables.
 
 When you run the pipeline on your machine by default it will try to run everything locally with no resource limits. If you have an HPC or cloud backend instead, or have specific environment needs, these can be set by creating a config file and passing it to the `nextflow run` command.
 The [Nextflow docs](https://www.nextflow.io/docs/latest/config.html) describe the config file syntax, which is a DSL written in Groovy.
@@ -205,7 +205,7 @@ Refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest/config
 
 ## Checkpointing / resuming previous runs
 
-Nextflow keeps a cache of every step that has been executed allowing for the resumption of partially completed runs. For example, if you had a run that failed at the tracking stage due to not having sufficient memory assigned, you could rerun the pipeline (after increasing the memory as described [above](https://github.com/uoy-research/CellPhe-data-pipeline?tab=readme-ov-file#configuration)) by adding `-resume` to the `nextflow run` command which then use the cached outputs from earlier steps and jump straight to running tracking.
+Nextflow keeps a cache of every step that has been executed allowing for the resumption of partially completed runs. For example, if you had a run that failed at the tracking stage due to not having sufficient memory assigned, you could rerun the pipeline (after increasing the memory as described [above](#configuration)) by adding `-resume` to the `nextflow run` command which then use the cached outputs from earlier steps and jump straight to running tracking.
 
 This feature isn't just useful for failed runs. If you had a successful pipeline run segmentation model cyto3 and tracking algorithm SimpleLAP but now you wanted to try Sparse LAP tracking instead, adding `-resume` would use the cached segmentation results.
 
