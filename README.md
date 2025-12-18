@@ -205,9 +205,9 @@ Refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest/config
 
 ## Checkpointing / resuming previous runs
 
-Nextflow keeps a cache of every step that has been executed allowing for the resumption of partially completed runs. For example, if you had a run that failed at the tracking stage due to not having sufficient memory assigned, you could rerun the pipeline (after increasing the memory as described [above](#configuration)) by adding `-resume` to the `nextflow run` command which then use the cached outputs from earlier steps and jump straight to running tracking.
+Nextflow keeps a cache of every step that has been executed allowing for the resumption of partially completed runs. For example, if you had a run that failed at the tracking stage due to not having sufficient memory assigned, you could rerun the pipeline (after increasing the memory as described [above](#configuration)) by adding `-resume` to the `nextflow run` command. The pipeline would then use the cached outputs from earlier steps and jump straight to running tracking.
 
-This feature isn't just useful for failed runs. If you had a successful pipeline run segmentation model cyto3 and tracking algorithm SimpleLAP but now you wanted to try Sparse LAP tracking instead, adding `-resume` would use the cached segmentation results.
+This feature isn't just useful for failed runs. If you had a successful pipeline run with segmentation model cyto3 and tracking algorithm SimpleLAP but now you wanted to try Sparse LAP tracking instead, adding `-resume` would use the cached segmentation results.
 
 See the [Nextflow docs](https://www.nextflow.io/docs/latest/cache-and-resume.html) for full details of how this works.
 
