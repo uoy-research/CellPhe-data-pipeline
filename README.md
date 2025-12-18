@@ -9,7 +9,76 @@ This Nextflow pipeline runs a cell timelapse through the full CellPhe pipeline, 
   - Time-series feature extraction
   - QC report generation
 
-![Pipeline flowchart](docs/flowchart.png)
+```mermaid
+flowchart TB
+    subgraph " "
+    v0["Raw Images"]
+    v7["Segmentation Config"]
+    v13["Segmentation Notebook"]
+    v16["Tracking Config"]
+    v22["Segmentation Notebook"]
+    end
+    v2([remove_spaces])
+    v5([rename_frames])
+    v8([save_segmentation_config])
+    subgraph " "
+    v9[" "]
+    v15[" "]
+    v18[" "]
+    v24[" "]
+    v30[" "]
+    v33[" "]
+    end
+    v10([segment_image])
+    v14([segmentation_qc])
+    v17([save_tracking_config])
+    v19([track_images])
+    v20([parse_trackmate_xml])
+    v21([filter_size_and_observations])
+    v23([tracking_qc])
+    v25([cellphe_frame_features_image])
+    v27([combine_frame_features])
+    v28([create_frame_summary_features])
+    v29([cellphe_time_series_features])
+    v32([create_tiff_stack])
+    v1(( ))
+    v6(( ))
+    v11(( ))
+    v26(( ))
+    v0 --> v1
+    v1 --> v2
+    v2 --> v1
+    v1 --> v5
+    v5 --> v6
+    v7 --> v8
+    v8 --> v9
+    v6 --> v10
+    v10 --> v11
+    v13 --> v14
+    v6 --> v14
+    v11 --> v14
+    v14 --> v15
+    v16 --> v17
+    v17 --> v18
+    v11 --> v19
+    v19 --> v20
+    v20 --> v25
+    v20 --> v21
+    v20 --> v23
+    v21 --> v23
+    v21 --> v25
+    v21 --> v28
+    v22 --> v23
+    v23 --> v24
+    v6 --> v25
+    v25 --> v26
+    v26 --> v27
+    v27 --> v28
+    v28 --> v29
+    v29 --> v30
+    v6 --> v32
+    v32 --> v33
+```
 
 Nextflow provides several advantages over doing all this in Python through the [`CellPhe`](https://pypi.org/project/cellphe/) package:
 
