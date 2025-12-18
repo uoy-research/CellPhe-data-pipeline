@@ -9,6 +9,8 @@ This Nextflow pipeline runs a cell timelapse through the full CellPhe pipeline, 
   - Time-series feature extraction
   - QC report generation
 
+![Pipeline flowchart](docs/flowchart.png)
+
 Nextflow provides several advantages over doing all this in Python through the [`CellPhe`](https://pypi.org/project/cellphe/) package:
 
   - Makes the pipeline structure explicit
