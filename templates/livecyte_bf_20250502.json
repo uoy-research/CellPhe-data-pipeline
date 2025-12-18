@@ -1,7 +1,6 @@
 {
   "folder_names": {
-    "site": "",
-    "image_type": "",
+    "timelapse_id": "",
     "segmentation": "livecyte_bf_20250502",
     "tracking": "LAP_default"
   },
@@ -11,8 +10,10 @@
     "cellphe": true
   },
   "segmentation": {
+    "image": "ghcr.io/uoy-research/cellphe-cellpose3:0.1.2",
     "model": {
-      "pretrained_model": "/mnt/scratch/projects/biol-imaging-2024/cellpose/CP_20250502_Livcyto_25imgs"
+      "pretrained_model": "/cellpose/CP_20250502_Livcyto_25imgs",
+      "gpu": false
     },
     "eval": {
       "channels": [0,0]

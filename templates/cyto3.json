@@ -1,7 +1,6 @@
 {
   "folder_names": {
-    "site": "",
-    "image_type": "",
+    "timelapse_id": "",
     "segmentation": "cyto3",
     "tracking": "LAP_default"
   },
@@ -11,8 +10,10 @@
     "cellphe": true
   },
   "segmentation": {
+    "image": "ghcr.io/uoy-research/cellphe-cellpose3:0.1.2",
     "model": {
-      "model_type": "cyto3"
+      "model_type": "cyto3",
+      "gpu": false
     },
     "eval": {
       "channels": [0,0]

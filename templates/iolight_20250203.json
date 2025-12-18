@@ -1,7 +1,6 @@
 {
   "folder_names": {
-    "site": "",
-    "image_type": "",
+    "timelapse_id": "",
     "segmentation": "iolight_20250203",
     "tracking": "LAP_default"
   },
@@ -11,8 +10,10 @@
     "cellphe": true
   },
   "segmentation": {
+    "image": "ghcr.io/uoy-research/cellphe-cellpose3:0.1.2",
     "model": {
-      "pretrained_model": "/mnt/scratch/projects/biol-imaging-2024/cellpose/CP_20250203_122157"
+      "pretrained_model": "/cellpose/CP_20250203_122157",
+      "gpu": false
     },
     "eval": {
       "channels": [0,0]
