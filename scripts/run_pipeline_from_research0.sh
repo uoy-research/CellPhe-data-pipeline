@@ -59,9 +59,8 @@ EXPERIMENT_PATH_RESEARCH0_STORAGE="/shared/storage/bioldata/bl-cellphe/Experimen
 EXPERIMENT_PATH_RESEARCH0_LONGSHIP="/shared/longship/projects/biol-imaging-2024/Experiments/$EXPERIMENT"
 CONFIG_PATH_VIKING="$EXPERIMENT_PATH_VIKING_LONGSHIP/configs/$BASENAME"
 CONFIG_PATH_RESEARCH0="$EXPERIMENT_PATH_RESEARCH0_LONGSHIP/configs/$BASENAME"
-SITE=$(../tools/jq -r .folder_names.site $CONFIG)
-IMAGE=$(../tools/jq -r .folder_names.image_type $CONFIG)
-RAW_DATA_DIR="$EXPERIMENT_PATH_RESEARCH0_LONGSHIP/raw/${SITE}_${IMAGE}"
+TIMELAPSE_ID=$(../tools/jq -r .folder_names.timelapse_id $CONFIG)
+RAW_DATA_DIR="$EXPERIMENT_PATH_RESEARCH0_LONGSHIP/raw/${TIMELAPSE_ID}"
 
 ml load tools/rclone
 
