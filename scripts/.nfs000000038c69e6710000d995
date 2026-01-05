@@ -90,7 +90,7 @@ rclone --config .rclone.config copyto -v $CONFIG $CONFIG_PATH_RESEARCH0
 
 # Step 2: Submit the job to process the data (waits until complete)
 echo "Executing pipeline..."
-NEXTFLOW_CMD="cd /mnt/longship/projects/biol-imaging-2024/CellPhe-data-pipeline && ./scripts/run_pipeline_on_viking.sh $CONFIG_PATH_VIKING -resume"
+NEXTFLOW_CMD="cd /mnt/longship/projects/biol-imaging-2024/CellPhe-data-pipeline && ./process_dataset.sh $CONFIG_PATH_VIKING -resume"
 ssh viking "${NEXTFLOW_CMD}"
 
 # Step 3: Move outputs from scratch to longship
