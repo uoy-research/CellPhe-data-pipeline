@@ -99,4 +99,4 @@ ssh viking "${MOVE_OUTPUTS_LONGSHIP_CMD}"
 
 # Step 4: Copy outputs from longship to bioldata
 echo "Transferring outputs to bioldata..."
-rsync --progress -vru $EXPERIMENT_PATH_RESEARCH0_LONGSHIP/ $EXPERIMENT_PATH_RESEARCH0_STORAGE/
+rsync --progress -vru viking:$EXPERIMENT_PATH_VIKING_LONGSHIP/ $EXPERIMENT_PATH_RESEARCH0_STORAGE/
