@@ -10,7 +10,7 @@
     "cellphe": true
   },
   "segmentation": {
-    "image": "ghcr.io/uoy-research/cellphe-cellpose3:0.1.3",
+    "image": "ghcr.io/uoy-research/cellphe-cellpose3:0.1.5",
     "model": {
       "pretrained_model": "/cellpose/CP_OFM_20260114",
       "gpu": false
